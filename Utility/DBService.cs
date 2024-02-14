@@ -13,17 +13,17 @@ namespace Utility
             this.connectionString = connectionString;
         }
 
-        public void CreateCommand(string query)
+        public int CreateCommand(string query)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
                 SqlCommand command = new SqlCommand(query, connection);
-                command.ExecuteNonQuery();
+                return command.ExecuteNonQuery();
             }
         }
 
-        public void InsertIngredient(Ingredient ingredient)
+        public int InsertIngredient(Ingredient ingredient)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
@@ -65,7 +65,7 @@ namespace Utility
                     command.Parameters.Add("@param27", SqlDbType.Float).Value = ingredient.Vite_mg;
                     command.Parameters.Add("@param28", SqlDbType.Float).Value = ingredient.Vitd2_mcg;
                     command.CommandType = CommandType.Text;
-                    command.ExecuteNonQuery();
+                    return command.ExecuteNonQuery();
                 }
             }
 

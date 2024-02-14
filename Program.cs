@@ -1,4 +1,6 @@
-﻿using Model;
+﻿using Configuration;
+using Mapper;
+using Model;
 using Utility;
 
 internal class Program
@@ -34,16 +36,26 @@ internal class Program
 
         Console.WriteLine("Inserting categories into database...");
 
+        int count = 0;
+
         for(int i = 1; i < categories.Count; i++)
         {
 /*             string query = $"INSERT INTO dbo.category (description) VALUES ('{categories[i][2]}')";
-            dbService.CreateCommand(query); */
+            count += dbService.CreateCommand(query);*/
             
             categoryCodes.Add(int.TryParse(categories[i][1], out int code) ? code : 0, categories[i][2]);
         }
+        Console.WriteLine($"{count} categories inserted.");
+
+        string query = $"INSERT INTO dbo.category (description) VALUES ('Other Food Items')"; // last category insertion
+        dbService.CreateCommand(query);
+
         categoryCodes = categoryCodes.OrderByDescending(pair => pair.Key).ToDictionary(pair => pair.Key, pair => pair.Value);
 
         List<Category> categoryList = dbService.ReadCategories(); 
+
+        CategoryConfiguration.OtherCategory = categoryList.Last().Id;
+
 
         Console.WriteLine($"Reading {file2}...");
 
@@ -59,14 +71,19 @@ internal class Program
 
         Console.WriteLine("Inserting ingredients into database...");
 
+        MapperBase<Ingredient, string[]> ingredientMapper = new IngredientMapper();
+
+        count = 0;            
+
         for(int i = 1; i < ingredients.Count; i++)
         {
             int categoryId = 0;
-            if(ingredients[i][1].Contains("alcohol"))
+
+            if(ingredients[i][1].Contains("alcohol")) //classification for alcohol separately
             {
                 categoryId = categoryList.FirstOrDefault(x => x.Description == "Alcoholic Beverages").Id;
             }
-            else
+            else //classification based on NDB number
             {
                 var ndbNumber = int.TryParse(ingredients[i][0], out int s) ? s : 1;
                 var categoryDescription = categoryCodes.FirstOrDefault(x => ndbNumber / (x.Key * 10) == 1).Value;
@@ -74,42 +91,17 @@ internal class Program
                 categoryId = category != null ? category.Id : 0;
             }
 
-            Console.WriteLine(categoryId);
-
-            if(categoryId != 0) 
+            if(categoryId == 0) //classification for unclassified food items
             {
-                dbService.InsertIngredient(new Ingredient
-                {
-                    Description = ingredients[i][1],
-                    CategoryId = categoryId,
-                    Energy_kcal = int.TryParse(ingredients[i][2], out int v1) ? v1 : 0,
-                    Protein_g = float.TryParse(ingredients[i][3], out float v2) ? v2 : 0,
-                    Saturated_fats_g = float.TryParse(ingredients[i][4], out float v3) ? v3: 0,
-                    Fat_g = float.TryParse(ingredients[i][5], out float v4) ? v4 : 0,
-                    Carb_g = float.TryParse(ingredients[i][6], out float v5) ? v5 : 0,
-                    Fiber_g = float.TryParse(ingredients[i][7], out float v6) ? v6 : 0,
-                    Sugar_g = float.TryParse(ingredients[i][8], out float v7) ? v7 : 0,
-                    Calcium_mg = float.TryParse(ingredients[i][9], out float v8) ? v8 : 0,
-                    Iron_mg = float.TryParse(ingredients[i][10], out float v9) ? v9 : 0,
-                    Magnesium_mg = float.TryParse(ingredients[i][11], out float v10) ? v10 : 0,
-                    Potassium_mg = float.TryParse(ingredients[i][12], out float v11) ? v11 : 0,
-                    Sodium_mg = float.TryParse(ingredients[i][13], out float v12) ? v12 : 0,
-                    Zinc_mg = float.TryParse(ingredients[i][14], out float v13) ? v13 : 0,
-                    Copper_mcg = float.TryParse(ingredients[i][15], out float v14) ? v14 : 0,
-                    Manganese_mg = float.TryParse(ingredients[i][16], out float v15) ? v15 : 0,
-                    Selenium_mcg = float.TryParse(ingredients[i][17], out float v16) ? v16 : 0,
-                    Vitc_mg = float.TryParse(ingredients[i][18], out float v17) ? v17 : 0,
-                    Thiamin_mg = float.TryParse(ingredients[i][19], out float v18) ? v18 : 0,
-                    Riboflavin_mg = float.TryParse(ingredients[i][20], out float v19) ? v19 : 0,
-                    Niacin_mg = float.TryParse(ingredients[i][21], out float v20) ? v20 : 0,
-                    Vitb6_mg = float.TryParse(ingredients[i][22], out float v21) ? v21 : 0,
-                    Folate_mcg = float.TryParse(ingredients[i][23], out float v22) ? v22 : 0,
-                    Vitb12_mcg = float.TryParse(ingredients[i][24], out float v23) ? v23 : 0,
-                    Vita_mcg = float.TryParse(ingredients[i][25], out float v24) ? v24 : 0,
-                    Vite_mg = float.TryParse(ingredients[i][26], out float v25) ? v25 : 0,
-                    Vitd2_mcg = float.TryParse(ingredients[i][27], out float v26) ? v26 : 0
-                });
+                UnclassifiedFoodCategorizer unclassifiedFoodCategorizer = new UnclassifiedFoodCategorizer();
+                categoryId = unclassifiedFoodCategorizer.Categorize(ingredients[i][1]);
             }
+
+            var ingredient = ingredientMapper.Map(ingredients[i]);
+            ingredient.CategoryId = categoryId;
+            count += dbService.InsertIngredient(ingredient);
         }
+
+        Console.WriteLine($"{count} ingredients inserted.");
     }
 }

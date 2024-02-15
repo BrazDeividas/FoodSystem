@@ -1,5 +1,7 @@
+using System.Collections.Specialized;
 using FoodSystemAPI.Filters;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Primitives;
 
 namespace FoodSystemAPI.Services
 {
@@ -17,6 +19,15 @@ namespace FoodSystemAPI.Services
             var _endpointUri = new Uri(string.Concat(_baseUri, route));
             var modifiedUri = QueryHelpers.AddQueryString(_endpointUri.ToString(), "pageNumber", filter.PageNumber.ToString());
             modifiedUri = QueryHelpers.AddQueryString(modifiedUri, "pageSize", filter.PageSize.ToString());
+            return new Uri(modifiedUri);
+        }
+
+        public Uri GetPageUri(PaginationFilter filter, string route, IEnumerable<KeyValuePair<string, StringValues>> otherParameters)
+        {
+            var _endpointUri = new Uri(string.Concat(_baseUri, route));
+            var modifiedUri = QueryHelpers.AddQueryString(_endpointUri.ToString(), "pageNumber", filter.PageNumber.ToString());
+            modifiedUri = QueryHelpers.AddQueryString(modifiedUri, "pageSize", filter.PageSize.ToString());
+            modifiedUri = QueryHelpers.AddQueryString(modifiedUri, otherParameters);
             return new Uri(modifiedUri);
         }
     }

@@ -1,3 +1,4 @@
+using System.Web;
 using AutoMapper;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
@@ -44,8 +45,11 @@ public class IngredientController : ControllerBase
             entities = await _repository.GetAll(validFilter);
             totalRecords = await _repository.CountAsync();
         }
-
-        pagedResponse = PaginationHelper.CreatePagedResponse(entities, validFilter, totalRecords, _uriService, route);
+        
+        var parameters = HttpUtility.ParseQueryString(Request.QueryString.Value);
+        parameters  = PaginationHelper.TrimPaginationParameters(parameters);
+        var parametersEnumerable = NameValueCollectionExtensions.AsEnumerable(parameters);
+        pagedResponse = PaginationHelper.CreatePagedResponse(entities, validFilter, totalRecords, _uriService, route, parametersEnumerable);
         return Ok(pagedResponse);
     }
 

@@ -21,14 +21,14 @@ public class CategoryController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Category>>> GetAll()
+    public async Task<ActionResult<Response<IEnumerable<Category>>>> GetAll()
     {
         var entities = await _repository.GetAll();
         return Ok(new Response<IEnumerable<Category>>(entities));
     }
 
     [HttpGet("id")]
-    public async Task<ActionResult<Category>> GetById(int id)
+    public async Task<ActionResult<Response<Category>>> GetById(int id)
     {
         var entity = await _repository.GetById(id);
         if (entity == null)
@@ -39,7 +39,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Category>> Add(PostCategoryDto request)
+    public async Task<ActionResult<Response<Category>>> Add(PostCategoryDto request)
     {
         var newCategory = _mapper.Map<Category>(request);
         var newEntity = await _repository.Add(newCategory);
@@ -48,7 +48,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPut]
-    public ActionResult<Category> Update(Category entity)
+    public ActionResult<Response<Category>> Update(Category entity)
     {
         var updatedEntity = _repository.Update(entity);
         _repository.Save();
@@ -56,7 +56,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpDelete("id")]
-    public async Task<ActionResult<Category>> Delete(int id)
+    public async Task<ActionResult<Response<Category>>> Delete(int id)
     {
         var entity = await _repository.Delete(id);
         if (entity == null)

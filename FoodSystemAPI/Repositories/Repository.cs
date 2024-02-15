@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Filters;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,14 @@ public class Repository<T> : IRepository<T> where T : class
     public async Task<IEnumerable<T>> GetAll(PaginationFilter paginationFilter)
     {
         return await _dbSet.Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
+            .Take(paginationFilter.PageSize)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<T>> GetAll(PaginationFilter paginationFilter, Expression<Func<T, bool>> expression)
+    {
+        return await _dbSet.Where(expression)
+            .Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
             .Take(paginationFilter.PageSize)
             .ToListAsync();
     }
@@ -59,6 +68,11 @@ public class Repository<T> : IRepository<T> where T : class
     public async Task<int> CountAsync()
     {
         return await _dbSet.CountAsync();
+    }
+
+    public async Task<int> CountAsync(Expression<Func<T, bool>> expression)
+    {
+        return await _dbSet.CountAsync(expression);
     }
 
     public void Save()

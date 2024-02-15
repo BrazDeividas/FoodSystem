@@ -25,19 +25,32 @@ public class IngredientController : ControllerBase
         _mapper = mapper;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<Response<Ingredient>>> GetAll([FromQuery] PaginationFilter paginationFilter)
+    [HttpGet] //fix links after setting custom category
+    public async Task<ActionResult<Response<IEnumerable<Ingredient>>>> GetAll([FromQuery] PaginationFilter paginationFilter, [FromQuery] int categoryId = 0)
     {
         var route = Request.Path.Value;
         var validFilter = new PaginationFilter(paginationFilter.PageNumber, paginationFilter.PageSize);
-        var entities = await _repository.GetAll(validFilter);
-        var totalRecords = await _repository.CountAsync();
-        var pagedReponse = PaginationHelper.CreatePagedResponse<Ingredient>(entities, validFilter, totalRecords, _uriService, route);
-        return Ok(pagedReponse);
+        IEnumerable<Ingredient> entities;
+        int totalRecords;
+        PagedResponse<IEnumerable<Ingredient>> pagedResponse;
+
+        if(categoryId != 0)
+        {
+            entities = await _repository.GetAll(validFilter, x => x.CategoryId == categoryId);
+            totalRecords = await _repository.CountAsync(x => x.CategoryId == categoryId);
+        }
+        else
+        {
+            entities = await _repository.GetAll(validFilter);
+            totalRecords = await _repository.CountAsync();
+        }
+
+        pagedResponse = PaginationHelper.CreatePagedResponse(entities, validFilter, totalRecords, _uriService, route);
+        return Ok(pagedResponse);
     }
 
     [HttpGet("id")]
-    public async Task<ActionResult<Ingredient>> GetById(int id)
+    public async Task<ActionResult<Response<Ingredient>>> GetById(int id)
     {
         var entity = await _repository.GetById(id);
         if (entity == null)
@@ -48,7 +61,7 @@ public class IngredientController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Ingredient>> Add(PostIngredientDto request)
+    public async Task<ActionResult<Response<Ingredient>>> Add(PostIngredientDto request)
     {
         var model = _mapper.Map<Ingredient>(request);
         var newEntity = await _repository.Add(model);
@@ -57,7 +70,7 @@ public class IngredientController : ControllerBase
     }
 
     [HttpPut]
-    public ActionResult<Ingredient> Update(Ingredient entity)
+    public ActionResult<Response<Ingredient>> Update(Ingredient entity)
     {
         var updatedEntity = _repository.Update(entity);
         _repository.Save();
@@ -65,7 +78,7 @@ public class IngredientController : ControllerBase
     }
 
     [HttpDelete("id")]
-    public async Task<ActionResult<Ingredient>> Delete(int id)
+    public async Task<ActionResult<Response<Ingredient>>> Delete(int id)
     {
         var entity = await _repository.Delete(id);
         if (entity == null)

@@ -1,3 +1,5 @@
+using AutoMapper;
+using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Repositories;
 using FoodSystemAPI.Wrappers;
@@ -9,11 +11,13 @@ namespace FoodSystemAPI.Controllers;
 [ApiController]
 public class CategoryController : ControllerBase
 {
-    private IRepository<Category> _repository;
+    private readonly IRepository<Category> _repository;
+    private readonly IMapper _mapper;
 
-    public CategoryController(IRepository<Category> repository)
+    public CategoryController(IRepository<Category> repository, IMapper mapper)
     {
         _repository = repository;
+        _mapper = mapper;
     }
 
     [HttpGet]
@@ -35,9 +39,11 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Category>> Add(Category entity)
+    public async Task<ActionResult<Category>> Add(PostCategoryDto request)
     {
-        var newEntity = await _repository.Add(entity);
+        var newCategory = _mapper.Map<Category>(request);
+        var newEntity = await _repository.Add(newCategory);
+        _repository.Save();
         return CreatedAtAction(nameof(GetById), new { id = newEntity.CategoryId }, new Response<Category>(newEntity));
     }
 
@@ -45,6 +51,7 @@ public class CategoryController : ControllerBase
     public ActionResult<Category> Update(Category entity)
     {
         var updatedEntity = _repository.Update(entity);
+        _repository.Save();
         return Ok(new Response<Category>(updatedEntity));
     }
 
@@ -56,6 +63,7 @@ public class CategoryController : ControllerBase
         {
             return NotFound();
         }
+        _repository.Save();
         return Ok(new Response<Category>(entity));
     }
 }

@@ -1,3 +1,5 @@
+using AutoMapper;
+using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Filters;
 using FoodSystemAPI.Helpers;
@@ -14,11 +16,13 @@ public class IngredientController : ControllerBase
 {
     private readonly IRepository<Ingredient> _repository;
     private readonly IUriService _uriService;
+    private readonly IMapper _mapper;
 
-    public IngredientController(IRepository<Ingredient> repository, IUriService uriService)
+    public IngredientController(IRepository<Ingredient> repository, IUriService uriService, IMapper mapper)
     {
         _repository = repository;
         _uriService = uriService;
+        _mapper = mapper;
     }
 
     [HttpGet]
@@ -44,9 +48,11 @@ public class IngredientController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Ingredient>> Add(Ingredient entity)
+    public async Task<ActionResult<Ingredient>> Add(PostIngredientDto request)
     {
-        var newEntity = await _repository.Add(entity);
+        var model = _mapper.Map<Ingredient>(request);
+        var newEntity = await _repository.Add(model);
+        _repository.Save();
         return CreatedAtAction(nameof(GetById), new { id = newEntity.IngredientId }, new Response<Ingredient>(newEntity));
     }
 
@@ -54,6 +60,7 @@ public class IngredientController : ControllerBase
     public ActionResult<Ingredient> Update(Ingredient entity)
     {
         var updatedEntity = _repository.Update(entity);
+        _repository.Save();
         return Ok(new Response<Ingredient>(updatedEntity));
     }
 
@@ -65,6 +72,7 @@ public class IngredientController : ControllerBase
         {
             return NotFound();
         }
+        _repository.Save();
         return Ok(new Response<Ingredient>(entity));
     }
 }

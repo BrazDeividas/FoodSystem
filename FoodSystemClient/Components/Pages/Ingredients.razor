@@ -1,0 +1,91 @@
+@page "/ingredients"
+@using FoodSystemClient.Wrappers
+@inject IHttpClientFactory ClientFactory
+
+<PageTitle>Ingredients</PageTitle>
+
+<h1>Ingredients</h1>
+
+<p>Ingredients available:</p>
+
+@if (ingredients == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (getIngredientsError)
+{
+    <p><em>Couldn't load ingredients. Please try again.</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Amount per 100g</th>
+                <th>Calories</th>
+                <th>Fat, g</th>
+                <th>Saturated Fat, g</th>
+                <th>Sodium, mg</th>
+                <th>Total Carbohydrate, g</th>
+                <th>Sugars, g</th>
+                <th>Protein, g</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ingredient in ingredients)
+            {
+                <tr>
+                    <td>@ingredient.IngredientId</td>
+                    <td>@ingredient.Description</td>
+                    <td></td>
+                    <td>@ingredient.EnergyKcal</td>
+                    <td>@ingredient.FatG</td>
+                    <td>@ingredient.SaturatedFatsG</td>
+                    <td>@ingredient.SodiumMg</td>
+                    <td>@ingredient.CarbG</td>
+                    <td>@ingredient.SugarG</td>
+                    <td>@ingredient.ProteinG</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<Ingredient> ingredients = Array.Empty<Ingredient>();
+    private PagedResponse<Ingredient[]> responseIngredients;
+    private bool getIngredientsError;
+    protected override async Task OnInitializedAsync()
+    {
+        var client = ClientFactory.CreateClient("FoodSystemAPI");
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            "api/ingredient");
+        request.Headers.Add("Accept", "application/json");
+
+        var response = await client.SendAsync(request);
+
+        if(response.IsSuccessStatusCode)
+        {
+            responseIngredients = await response.Content.ReadFromJsonAsync<PagedResponse<Ingredient[]>>();
+            ingredients = responseIngredients.Data;
+        }
+        else
+        {
+            getIngredientsError = true;
+        }
+    }
+    private class Ingredient
+    {
+        public int IngredientId { get; set; }
+        public string Description { get; set; }
+        public int EnergyKcal { get; set; }
+        public double ProteinG { get; set; }
+        public double SaturatedFatsG { get; set; }
+        public double FatG { get; set; }
+        public double CarbG { get; set; }
+        public double SugarG { get; set; }
+        public double SodiumMg { get; set; }
+    }
+}

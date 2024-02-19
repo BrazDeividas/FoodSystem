@@ -1,7 +1,6 @@
 using AutoMapper;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
-using FoodSystemAPI.Repositories;
 using FoodSystemAPI.Services;
 using FoodSystemAPI.Wrappers;
 using Microsoft.AspNetCore.Mvc;

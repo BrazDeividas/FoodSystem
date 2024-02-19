@@ -40,8 +40,8 @@ internal class Program
 
         for(int i = 1; i < categories.Count; i++)
         {
-/*             string query = $"INSERT INTO dbo.category (description) VALUES ('{categories[i][2]}')";
-            count += dbService.CreateCommand(query);*/
+            string categoryQuery = $"INSERT INTO dbo.category (description) VALUES ('{categories[i][2]}')";
+            count += dbService.CreateCommand(categoryQuery);
             
             categoryCodes.Add(int.TryParse(categories[i][1], out int code) ? code : 0, categories[i][2]);
         }

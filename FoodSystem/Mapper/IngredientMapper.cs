@@ -9,7 +9,7 @@ namespace Mapper
             return new Ingredient
                 {
                     Description = ingredient[1],
-                    Energy_kcal = int.TryParse(ingredient[2], out int v1) ? v1 : 0,
+                    Energy_kcal = float.TryParse(ingredient[2], out float v1) ? (int)v1 : 0,
                     Protein_g = float.TryParse(ingredient[3], out float v2) ? v2 : 0,
                     Saturated_fats_g = float.TryParse(ingredient[4], out float v3) ? v3: 0,
                     Fat_g = float.TryParse(ingredient[5], out float v4) ? v4 : 0,

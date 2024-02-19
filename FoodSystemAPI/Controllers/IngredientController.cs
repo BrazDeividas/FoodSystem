@@ -16,13 +16,13 @@ namespace FoodSystemAPI.Controllers;
 [ApiController]
 public class IngredientController : ControllerBase
 {
-    private readonly IRepository<Ingredient> _repository;
+    private readonly IIngredientService _service;
     private readonly IUriService _uriService;
     private readonly IMapper _mapper;
 
-    public IngredientController(IRepository<Ingredient> repository, IUriService uriService, IMapper mapper)
+    public IngredientController(IIngredientService service, IUriService uriService, IMapper mapper)
     {
-        _repository = repository;
+        _service = service;
         _uriService = uriService;
         _mapper = mapper;
     }
@@ -41,8 +41,8 @@ public class IngredientController : ControllerBase
             Expression<Func<Ingredient, bool>> expression = !string.IsNullOrEmpty(searchString) 
             ? x => x.CategoryId == categoryId && x.Description.Contains(searchString)
             : x => x.CategoryId == categoryId;
-            entities = await _repository.GetAll(validFilter, expression);
-            totalRecords = await _repository.CountAsync(expression);
+            entities = await _service.GetAll(validFilter, expression);
+            totalRecords = await _service.CountAsync(expression);
         }
         else
         {
@@ -50,12 +50,11 @@ public class IngredientController : ControllerBase
             ? x => x.Description.Contains(searchString)
             : null;
             entities = expression != null
-            ? await _repository.GetAll(validFilter, expression)
-            : await _repository.GetAll(validFilter);
-            await _repository.GetAll(validFilter);
+            ? await _service.GetAll(validFilter, expression)
+            : await _service.GetAll(validFilter);
             totalRecords = expression != null
-            ? await _repository.CountAsync(expression)
-            : await _repository.CountAsync();
+            ? await _service.CountAsync(expression)
+            : await _service.CountAsync();
         }
         
         var parameters = HttpUtility.ParseQueryString(Request.QueryString.Value);
@@ -68,7 +67,7 @@ public class IngredientController : ControllerBase
     [HttpGet("id")]
     public async Task<ActionResult<Response<Ingredient>>> GetById(int id)
     {
-        var entity = await _repository.GetById(id);
+        var entity = await _service.GetById(id);
         if (entity == null)
         {
             return NotFound();
@@ -79,29 +78,25 @@ public class IngredientController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Response<Ingredient>>> Add(PostIngredientDto request)
     {
-        var model = _mapper.Map<Ingredient>(request);
-        var newEntity = await _repository.Add(model);
-        _repository.Save();
+        var newEntity = await _service.Add(request);
         return CreatedAtAction(nameof(GetById), new { id = newEntity.IngredientId }, new Response<Ingredient>(newEntity));
     }
 
     [HttpPut]
     public ActionResult<Response<Ingredient>> Update(Ingredient entity)
     {
-        var updatedEntity = _repository.Update(entity);
-        _repository.Save();
+        var updatedEntity = _service.Update(entity);
         return Ok(new Response<Ingredient>(updatedEntity));
     }
 
     [HttpDelete("id")]
     public async Task<ActionResult<Response<Ingredient>>> Delete(int id)
     {
-        var entity = await _repository.Delete(id);
+        var entity = await _service.Delete(id);
         if (entity == null)
         {
             return NotFound();
         }
-        _repository.Save();
         return Ok(new Response<Ingredient>(entity));
     }
 }

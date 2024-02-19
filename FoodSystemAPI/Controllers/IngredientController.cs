@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Web;
 using AutoMapper;
 using FoodSystemAPI.DTOs;
@@ -26,8 +27,8 @@ public class IngredientController : ControllerBase
         _mapper = mapper;
     }
 
-    [HttpGet] //fix links after setting custom category
-    public async Task<ActionResult<Response<IEnumerable<Ingredient>>>> GetAll([FromQuery] PaginationFilter paginationFilter, [FromQuery] int categoryId = 0)
+    [HttpGet] 
+    public async Task<ActionResult<Response<IEnumerable<Ingredient>>>> GetAll([FromQuery] PaginationFilter paginationFilter, [FromQuery] int categoryId = 0, [FromQuery] string searchString = "")
     {
         var route = Request.Path.Value;
         var validFilter = new PaginationFilter(paginationFilter.PageNumber, paginationFilter.PageSize);
@@ -37,13 +38,24 @@ public class IngredientController : ControllerBase
 
         if(categoryId != 0)
         {
-            entities = await _repository.GetAll(validFilter, x => x.CategoryId == categoryId);
-            totalRecords = await _repository.CountAsync(x => x.CategoryId == categoryId);
+            Expression<Func<Ingredient, bool>> expression = !string.IsNullOrEmpty(searchString) 
+            ? x => x.CategoryId == categoryId && x.Description.Contains(searchString)
+            : x => x.CategoryId == categoryId;
+            entities = await _repository.GetAll(validFilter, expression);
+            totalRecords = await _repository.CountAsync(expression);
         }
         else
         {
-            entities = await _repository.GetAll(validFilter);
-            totalRecords = await _repository.CountAsync();
+            Expression<Func<Ingredient, bool>> expression = !string.IsNullOrEmpty(searchString) 
+            ? x => x.Description.Contains(searchString)
+            : null;
+            entities = expression != null
+            ? await _repository.GetAll(validFilter, expression)
+            : await _repository.GetAll(validFilter);
+            await _repository.GetAll(validFilter);
+            totalRecords = expression != null
+            ? await _repository.CountAsync(expression)
+            : await _repository.CountAsync();
         }
         
         var parameters = HttpUtility.ParseQueryString(Request.QueryString.Value);

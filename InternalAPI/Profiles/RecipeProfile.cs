@@ -9,6 +9,7 @@ namespace InternalAPI.Profiles
         public RecipeProfile()
         {
             CreateMap<CreateRecipeDTO, Recipe>();
+            CreateMap<UpdateRecipeDTO, Recipe>();
         }
     }
 }

@@ -56,9 +56,14 @@ public class RecipeController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateRecipe(UpdateRecipeDTO recipe)
+    public async Task<IActionResult> UpdateRecipe(UpdateRecipeDTO recipe, int id)
     {
-        var entity = _mapper.Map<UpdateRecipeDTO, Recipe>(recipe);
+        var entity = await _unitOfWork.Recipes.GetById(id);
+        if(entity == null)
+        {
+            return NotFound();
+        }
+        _mapper.Map(recipe, entity);
         _unitOfWork.Recipes.Update(entity);
         await _unitOfWork.CompleteAsync();
         return Ok(recipe);

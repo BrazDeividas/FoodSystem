@@ -25,6 +25,12 @@ public partial class FoodDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserMetrics> UserMetrics { get; set; }
+
+    public virtual DbSet<MealPlan> MealPlans { get; set; }
+
+    public virtual DbSet<MealPlanItem> MealPlanItems { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Name=ConnectionStrings:SqlServer");
 
@@ -156,6 +162,65 @@ public partial class FoodDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("username");
+        });
+
+        modelBuilder.Entity<UserMetrics>(entity =>
+        {
+            entity.ToTable("user_metrics")
+                .HasKey(e => e.UserMetricsId);
+
+            entity.Property(e => e.UserMetricsId).HasColumnName("user_metrics_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Age).HasColumnName("age");
+            entity.Property(e => e.Weight).HasColumnName("weight");
+            entity.Property(e => e.Height).HasColumnName("height");
+            entity.Property(e => e.Sex)
+                .HasColumnName("sex")
+                .HasConversion<int>();
+            entity.Property(e => e.ActivityLevel)
+                .HasColumnName("activity_level")
+                .HasConversion<int>();
+
+            entity.HasOne(d => d.User).WithOne(d => d.UserMetrics)
+                .HasForeignKey<UserMetrics>(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_user_metrics_user");
+        });
+
+        modelBuilder.Entity<MealPlan>(entity => 
+        {
+            entity.ToTable("meal_plan")
+                .HasKey(e => e.MealPlanId);
+
+            entity.Property(e => e.MealPlanId).HasColumnName("meal_plan_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
+
+            entity.HasOne(d => d.User).WithOne(p => p.MealPlan)
+                .HasForeignKey<MealPlan>(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_meal_plan_user");
+        });
+
+        modelBuilder.Entity<MealPlanItem>(entity =>
+        {
+            entity.ToTable("meal_plan_item")
+                .HasKey(e => e.MealPlanItemId);
+
+            entity.Property(e => e.MealPlanItemId).HasColumnName("meal_plan_item_id");
+            entity.Property(e => e.MealPlanId).HasColumnName("meal_plan_id");
+            entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
+            
+            entity.HasOne(d => d.MealPlan).WithMany(p => p.MealPlanItems)
+                .HasForeignKey(d => d.MealPlanId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_meal_plan_item_meal_plan");
+            
+            entity.HasOne(d => d.Recipe).WithMany()
+                .HasForeignKey(d => d.RecipeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_meal_plan_item_recipe");
         });
 
         OnModelCreatingPartial(modelBuilder);

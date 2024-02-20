@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace FoodSystemAPI.Entities;
 
-public partial class User
+public class User
 {
     public int UserId { get; set; }
 
@@ -16,4 +16,8 @@ public partial class User
     public byte[] PasswordHash { get; set; } = null!;
 
     public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
+
+    public virtual UserMetrics UserMetrics { get; set; } = null!;
+
+    public virtual MealPlan MealPlan { get; set; } = null!;
 }

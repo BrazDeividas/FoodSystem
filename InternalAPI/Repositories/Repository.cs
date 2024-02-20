@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using InternalAPI.DbContext;
+using InternalAPI.Filters;
 using InternalAPI.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,9 +17,19 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = context.Set<T>();
     }
 
-    public async Task<IEnumerable<T>> GetAll()
+    public async Task<IEnumerable<T>> GetAll(PaginationFilter paginationFilter)
     {
-        return await _dbSet.ToListAsync();
+        return await _dbSet.Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
+            .Take(paginationFilter.PageSize)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<T>> GetAll(PaginationFilter paginationFilter, Expression<Func<T, bool>> expression)
+    {
+        return await _dbSet.Where(expression)
+            .Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
+            .Take(paginationFilter.PageSize)
+            .ToListAsync();
     }
 
     public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> expression)

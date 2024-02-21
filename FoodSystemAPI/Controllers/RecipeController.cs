@@ -17,9 +17,23 @@ public class RecipeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ReceiveServerRecipeDto>>> GetRecipesAsync(string searchQuery)
+    public async Task<ActionResult<IEnumerable<ReceiveServerRecipeDto>>> GetRecipesAsync([FromQuery] string searchQuery)
     {
         var recipes = await _recipeService.GetRecipesAsync(searchQuery);
+        if (recipes != null)
+        {
+            return Ok(recipes);
+        }
+        else
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpGet("byIngredients")]
+    public async Task<ActionResult<IEnumerable<ReceiveServerRecipeDto>>> GetRecipesByIngredientsAsync([FromQuery] string ingredients)
+    {
+        var recipes = await _recipeService.GetRecipesByIngredientsAsync(ingredients);
         if (recipes != null)
         {
             return Ok(recipes);

@@ -48,4 +48,9 @@ public class RecipeService : IRecipeService
         }
         return null;
     }
+
+    public async Task<IEnumerable<ReceiveServerRecipeDto>> GetRecipesByIngredientsAsync(string ingredients)
+    {
+        var response = await _internalApiClient.GetFromJsonAsync<PagedResponse<IEnumerable<ReceiveServerRecipeDto>>>($"api/Recipe/byIngredients?ingredients={ingredients}");
+    }
 }

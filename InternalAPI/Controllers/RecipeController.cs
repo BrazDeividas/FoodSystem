@@ -8,6 +8,8 @@ using InternalAPI.Models;
 using InternalAPI.Services;
 using InternalAPI.Wrappers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace InternalAPI.Controllers;
 
@@ -15,18 +17,16 @@ namespace InternalAPI.Controllers;
 [ApiController]
 public class RecipeController : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
     private readonly IUriService _uriService;
+    private readonly IRecipeService _recipeService;
 
-    public RecipeController(IUnitOfWork unitOfWork, IMapper mapper, IUriService uriService)
+    public RecipeController(IUriService uriService, IRecipeService recipeService)
     {
-        _unitOfWork = unitOfWork;
-        _mapper = mapper;
         _uriService = uriService;
+        _recipeService = recipeService;
     }
 
-
+    [OutputCache(VaryByQueryKeys = ["pageNumber", "pageSize", "search"])]
     [HttpGet]
     public async Task<IActionResult> GetRecipes([FromQuery] PaginationFilter paginationFilter, [FromQuery] string search = "")
     {
@@ -36,29 +36,37 @@ public class RecipeController : ControllerBase
         int totalRecords;
         PagedResponse<IEnumerable<Recipe>> pagedResponse;
 
-        Expression<Func<Recipe, bool>> filter = x => x.Title.Contains(search);
-        if (!string.IsNullOrEmpty(search))
-        {
-            entities = await _unitOfWork.Recipes.GetAll(validFilter, filter);
-            totalRecords = await _unitOfWork.Recipes.CountAsync(filter);
-        }
-        else
-        {
-            entities = await _unitOfWork.Recipes.GetAll(validFilter);
-            totalRecords = await _unitOfWork.Recipes.CountAsync();
-        }
-
         var parameters = HttpUtility.ParseQueryString(Request.QueryString.Value);
         parameters = PaginationHelper.TrimPaginationParameters(parameters);
         var parametersEnumerable = NameValueCollectionExtensions.AsEnumerable(parameters);
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            Expression<Func<Recipe, bool>> filter = x => x.Title.Contains(search);
+            entities = await _recipeService.GetAll(validFilter, filter);
+            totalRecords = await _recipeService.CountAsync(filter);
+        }
+        else
+        {
+            entities = await _recipeService.GetAll(validFilter);
+            totalRecords = await _recipeService.CountAsync();
+        }
+        
         pagedResponse = PaginationHelper.CreatePagedResponse(entities, validFilter, totalRecords, _uriService, route, parametersEnumerable);
         return Ok(pagedResponse);
+    }
+
+    [HttpGet("byIngredients")]
+    public async Task<IActionResult> GetByIngredients(string ingredients)
+    {
+        var recipes = await _recipeService.GetAllByIngredients(ingredients);
+        return Ok(new Response<IEnumerable<Recipe>>(recipes));
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetRecipe(int id)
     {
-        var recipe = await _unitOfWork.Recipes.GetById(id);
+        var recipe = await _recipeService.GetById(id);
         if(recipe == null)
         {
             return NotFound();
@@ -69,52 +77,37 @@ public class RecipeController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> AddRecipe(IEnumerable<CreateRecipeDTO> recipes) //fix with add range later
     {
-        List<Recipe> entities = new List<Recipe>();
-        foreach(var recipe in recipes)
-        {
-            var entity = _mapper.Map<CreateRecipeDTO, Recipe>(recipe);
-            if ((await _unitOfWork.Recipes.Get(x => x.SourceAPI == entity.SourceAPI && x.SourceId == entity.SourceId)) != null)
-            {
-                continue;
-            }
-            await _unitOfWork.Recipes.Add(entity);
-            await _unitOfWork.CompleteAsync();
-            entities.Add(entity);
-        }
-        return Ok(new Response<IEnumerable<Recipe>>(entities));
+        var response = await _recipeService.AddMany(recipes);
+        return Ok(new Response<IEnumerable<Recipe>>(response));
     }
 
     [HttpPut]
     public async Task<IActionResult> UpdateRecipe(Recipe recipe)
     {
-        _unitOfWork.Recipes.Update(recipe);
-        await _unitOfWork.CompleteAsync();
-        return Ok(recipe);
+       
+        return Ok(await _recipeService.UpdateAsync(recipe));
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateRecipe(UpdateRecipeDTO recipe, int id)
     {
-        var entity = await _unitOfWork.Recipes.GetById(id);
-        if(entity == null)
+        var response = await _recipeService.UpdateById(id, recipe);
+        if(response == null)
         {
             return NotFound();
         }
-        _mapper.Map(recipe, entity);
-        _unitOfWork.Recipes.Update(entity);
-        await _unitOfWork.CompleteAsync();
-        return Ok(new Response<Recipe>(entity));
+        return Ok(new Response<Recipe>(response));
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRecipe(int id)
     {
-        var recipe = await _unitOfWork.Recipes.Delete(id);
+        var recipe = await _recipeService.Delete(id);
         if(recipe == null)
         {
             return NotFound();
         }
-        await _unitOfWork.CompleteAsync();
+
         return Ok(new Response<Recipe>(recipe));
     }
 }

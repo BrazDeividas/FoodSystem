@@ -1,5 +1,7 @@
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Handlers;
+using FoodSystemAPI.Helpers;
+using FoodSystemAPI.Infrastructure;
 using FoodSystemAPI.Repositories;
 using FoodSystemAPI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -8,27 +10,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddDbContext<FoodDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration["ConnectionStrings:SqlServer"]));
+builder.Services.AddDataAccessServices(builder.Configuration["ConnectionStrings:SqlServer"]!);
+builder.Services.AddCustomServices();
+builder.Services.AddCustomAutoMapper();
+builder.Services.AddExceptionHandler();
 
-builder.Services.AddSingleton<IUriService>(o =>
+builder.Services.AddHttpAPIClient("api-1", (httpClient) =>
 {
-    var accessor = o.GetRequiredService<IHttpContextAccessor>();
-    var request = accessor.HttpContext!.Request;
-    var uri = string.Concat(request.Scheme, "://", request.Host.ToUriComponent());
-    return new UriService(uri);
+    httpClient.BaseAddress = new(builder.Configuration["APIs:api-1:Url"]!);
+    httpClient.AddRapidAPIHeaders(builder.Configuration["APIs:api-1:Host"]!, builder.Configuration["APIs:api-1:Key"]!);
 });
 
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails();
+builder.Services.AddHttpAPIClient("api-internal", (httpClient) =>
+{
+    httpClient.BaseAddress = new(builder.Configuration["APIs:api-internal:Url"]!);
+});
 
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddScoped<IIngredientService, IngredientService>();
-builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

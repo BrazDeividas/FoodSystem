@@ -17,4 +17,6 @@ public class Recipe
     [Required]
     public int Servings { get; set; }
     public string ImageUrl { get; set; }
+    public string SourceAPI { get; set; }
+    public int SourceId { get; set; }
 }

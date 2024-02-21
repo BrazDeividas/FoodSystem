@@ -5,19 +5,21 @@ namespace InternalAPI.DTOs;
 
 public class CreateRecipeDTO
 {
-    [Required]
-    [MaxLength(50)]
+/*     [Required]
+    [MaxLength(50)] */
     public string Title { get; set; }
-    [Required]
+/*     [Required] */
     public string Instructions { get; set; }
-    [Required]
+/*     [Required] */
     public List<string> Ingredients { get; set; }
-    [Required]
-    [Range(0, int.MaxValue)]
+/*     [Required]
+    [Range(0, int.MaxValue)] */
     public int Calories { get; set; }
-    [Required]
-    [Range(1, int.MaxValue)]
+/*     [Required]
+    [Range(1, int.MaxValue)] */
     public int Servings { get; set; }
-    [Url]
+/*     [Url] */
     public string ImageUrl { get; set; }
+    public string SourceAPI { get; set; }
+    public int SourceId { get; set; }
 }

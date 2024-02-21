@@ -12,12 +12,14 @@ public class UpdateRecipeDTO
     public string Instructions { get; set; }
     [Required]
     public List<string> Ingredients { get; set; }
-    [Required]
-    [Range(0, int.MaxValue)]
+/*     [Required]
+    [Range(0, int.MaxValue)] */
     public int Calories { get; set; }
-    [Required]
-    [Range(1, int.MaxValue)]
+/*     [Required]
+    [Range(1, int.MaxValue)] */
     public int Servings { get; set; }
     [Url]
     public string ImageUrl { get; set; }
+    public string SourceAPI { get; set; }
+    public int SourceId { get; set; }
 }

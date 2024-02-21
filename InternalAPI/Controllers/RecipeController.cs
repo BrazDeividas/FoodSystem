@@ -67,12 +67,21 @@ public class RecipeController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddRecipe(CreateRecipeDTO recipe)
+    public async Task<IActionResult> AddRecipe(IEnumerable<CreateRecipeDTO> recipes) //fix with add range later
     {
-        var entity = _mapper.Map<CreateRecipeDTO, Recipe>(recipe);
-        await _unitOfWork.Recipes.Add(entity);
-        await _unitOfWork.CompleteAsync();
-        return Ok(new Response<Recipe>(entity));
+        List<Recipe> entities = new List<Recipe>();
+        foreach(var recipe in recipes)
+        {
+            var entity = _mapper.Map<CreateRecipeDTO, Recipe>(recipe);
+            if ((await _unitOfWork.Recipes.Get(x => x.SourceAPI == entity.SourceAPI && x.SourceId == entity.SourceId)) != null)
+            {
+                continue;
+            }
+            await _unitOfWork.Recipes.Add(entity);
+            await _unitOfWork.CompleteAsync();
+            entities.Add(entity);
+        }
+        return Ok(new Response<IEnumerable<Recipe>>(entities));
     }
 
     [HttpPut]

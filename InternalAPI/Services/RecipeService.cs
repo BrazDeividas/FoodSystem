@@ -73,6 +73,11 @@ public class RecipeService : IRecipeService
         return _unitOfWork.Recipes.GetAll(expression);
     }
 
+    public Task<IEnumerable<Recipe>> GetAll()
+    {
+        return _unitOfWork.Recipes.GetAll();
+    }
+
     public async Task<IEnumerable<Recipe>> GetAllByIngredients(string ingredients)
     {
         var recipes = await _unitOfWork.Recipes.GetAll();

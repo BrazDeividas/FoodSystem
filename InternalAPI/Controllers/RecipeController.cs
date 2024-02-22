@@ -1,17 +1,15 @@
 using System.Linq.Expressions;
-using System.Web;
-using AutoMapper;
 using InternalAPI.DTOs;
-using InternalAPI.Filters;
-using InternalAPI.Helpers;
 using InternalAPI.Models;
 using InternalAPI.Services;
 using InternalAPI.Wrappers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace InternalAPI.Controllers;
+
+//remove pagination
+//move caching to service
 
 [Route("api/[controller]")]
 [ApiController]
@@ -26,36 +24,26 @@ public class RecipeController : ControllerBase
         _recipeService = recipeService;
     }
 
-    [OutputCache(VaryByQueryKeys = ["pageNumber", "pageSize", "search"])]
+    [OutputCache(VaryByQueryKeys = ["search"])]
     [HttpGet]
-    public async Task<IActionResult> GetRecipes([FromQuery] PaginationFilter paginationFilter, [FromQuery] string search = "")
+    public async Task<IActionResult> GetRecipes([FromQuery] string search = "")
     {
-        var route = Request.Path.Value;
-        var validFilter = new PaginationFilter(paginationFilter.PageNumber, paginationFilter.PageSize);
         IEnumerable<Recipe> entities;
-        int totalRecords;
-        PagedResponse<IEnumerable<Recipe>> pagedResponse;
-
-        var parameters = HttpUtility.ParseQueryString(Request.QueryString.Value);
-        parameters = PaginationHelper.TrimPaginationParameters(parameters);
-        var parametersEnumerable = NameValueCollectionExtensions.AsEnumerable(parameters);
 
         if (!string.IsNullOrEmpty(search))
         {
             Expression<Func<Recipe, bool>> filter = x => x.Title.Contains(search);
-            entities = await _recipeService.GetAll(validFilter, filter);
-            totalRecords = await _recipeService.CountAsync(filter);
+            entities = await _recipeService.GetAll(filter);
         }
         else
         {
-            entities = await _recipeService.GetAll(validFilter);
-            totalRecords = await _recipeService.CountAsync();
+            entities = await _recipeService.GetAll();
         }
-        
-        pagedResponse = PaginationHelper.CreatePagedResponse(entities, validFilter, totalRecords, _uriService, route, parametersEnumerable);
-        return Ok(pagedResponse);
+
+        return Ok(new Response<IEnumerable<Recipe>>(entities));
     }
 
+    [OutputCache(VaryByQueryKeys = ["ingredients"])]
     [HttpGet("byIngredients")]
     public async Task<IActionResult> GetByIngredients(string ingredients)
     {

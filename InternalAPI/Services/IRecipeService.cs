@@ -10,6 +10,7 @@ public interface IRecipeService
     Task<IEnumerable<Recipe>> GetAll(PaginationFilter paginationFilter, Expression<Func<Recipe, bool>> expression);
     Task<IEnumerable<Recipe>> GetAll(PaginationFilter paginationFilter);
     Task<IEnumerable<Recipe>> GetAll(Expression<Func<Recipe, bool>> expression);
+    Task<IEnumerable<Recipe>> GetAll();
     Task<int> CountAsync(Expression <Func<Recipe, bool>> expression);
     Task<int> CountAsync();
     Task<Recipe> GetById(int id);

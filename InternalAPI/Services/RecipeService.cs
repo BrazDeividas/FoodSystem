@@ -77,8 +77,13 @@ public class RecipeService : IRecipeService
     {
         var recipes = await _unitOfWork.Recipes.GetAll();
         string[] ingredientsArray = [.. ingredients.Split(',')];
-        Expression<Func<Recipe, bool>> suggestions = x => x.Ingredients.Select(x => x.ToLower()).Intersect(ingredientsArray).Any();
-        return recipes.Where(suggestions.Compile());
+
+        var query = (from recipe in recipes
+            from ingredient in recipe.Ingredients
+            where ingredientsArray.Any(ingredient.Contains)
+            select recipe).Distinct();
+
+        return query.ToList();
     }
 
     public Task<Recipe> GetById(int id)

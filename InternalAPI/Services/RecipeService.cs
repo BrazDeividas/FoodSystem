@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using InternalAPI.DTOs;
-using InternalAPI.Filters;
 using InternalAPI.Models;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace InternalAPI.Services;
 
@@ -10,11 +10,13 @@ public class RecipeService : IRecipeService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
-    
-    public RecipeService(IUnitOfWork unitOfWork, IMapper mapper)
+    private readonly ICacheService _cacheService;
+
+    public RecipeService(IUnitOfWork unitOfWork, IMapper mapper, ICacheService cacheService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _cacheService = cacheService;
     }
 
     public async Task<IEnumerable<Recipe>> AddMany(IEnumerable<CreateRecipeDTO> recipes)
@@ -28,9 +30,13 @@ public class RecipeService : IRecipeService
             {
                 continue;
             }
-            await _unitOfWork.Recipes.Add(entity);
+            entity = await _unitOfWork.Recipes.Add(entity);
             await _unitOfWork.CompleteAsync();
             entities.Add(entity);
+            
+            _cacheService.Set($"{typeof(Recipe)}-{entity.RecipeId}", entity, new MemoryCacheEntryOptions {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+            });
         }
         
         return entities;
@@ -48,6 +54,7 @@ public class RecipeService : IRecipeService
 
     public async Task<Recipe> Delete(int id)
     {
+
         var recipe = await _unitOfWork.Recipes.Delete(id);
         if (recipe == null)
         {
@@ -55,51 +62,95 @@ public class RecipeService : IRecipeService
         }
 
         await _unitOfWork.CompleteAsync();
+        _cacheService.Remove($"{typeof(Recipe)}-{id}");
         return recipe;
     }
-
-    public Task<IEnumerable<Recipe>> GetAll(PaginationFilter paginationFilter, Expression<Func<Recipe, bool>> expression)
+    
+    public async Task<IEnumerable<Recipe>> GetAll(Expression<Func<Recipe, bool>> expression)
     {
-        return _unitOfWork.Recipes.GetAll(paginationFilter, expression);
+        var cachedEntities = await _cacheService.Get<IEnumerable<Recipe>>($"{typeof(Recipe)}-all-{expression.Body}");
+        
+        if(cachedEntities != null)
+        {
+            return cachedEntities;
+        }
+
+        var entities = await _unitOfWork.Recipes.GetAll(expression);
+        _cacheService.Set($"{typeof(Recipe)}-all-{expression.Body}", entities, new MemoryCacheEntryOptions {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+        });
+
+        return entities;
     }
 
-    public Task<IEnumerable<Recipe>> GetAll(PaginationFilter paginationFilter)
+    public async Task<IEnumerable<Recipe>> GetAll()
     {
-        return _unitOfWork.Recipes.GetAll(paginationFilter);
-    }
+        var cachedEntities = await _cacheService.Get<IEnumerable<Recipe>>($"{typeof(Recipe)}-all");
 
-    public Task<IEnumerable<Recipe>> GetAll(Expression<Func<Recipe, bool>> expression)
-    {
-        return _unitOfWork.Recipes.GetAll(expression);
-    }
+        if(cachedEntities != null)
+        {
+            return cachedEntities;
+        }
 
-    public Task<IEnumerable<Recipe>> GetAll()
-    {
-        return _unitOfWork.Recipes.GetAll();
+        var entities = await _unitOfWork.Recipes.GetAll();
+        _cacheService.Set($"{typeof(Recipe)}-all", entities, new MemoryCacheEntryOptions {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+        });
+
+        return entities;
     }
 
     public async Task<IEnumerable<Recipe>> GetAllByIngredients(string ingredients)
     {
-        var recipes = await _unitOfWork.Recipes.GetAll();
+        var cachedEntities = await _cacheService.Get<IEnumerable<Recipe>>($"{typeof(Recipe)}-all-by-ingredients-{ingredients}");
+        
+        if(cachedEntities != null)
+        {
+            return cachedEntities;
+        }
+        
         string[] ingredientsArray = [.. ingredients.Split(',')];
-
-        var query = (from recipe in recipes
+        var recipes = await _unitOfWork.Recipes.GetAll();
+        
+        var entities = (from recipe in recipes
             from ingredient in recipe.Ingredients
             where ingredientsArray.Any(ingredient.Contains)
-            select recipe).Distinct();
+            select recipe).Distinct().ToList();
 
-        return query.ToList();
+        _cacheService.Set($"{typeof(Recipe)}-all-by-ingredients-{ingredients}", entities, new MemoryCacheEntryOptions {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+        });
+
+        return entities;
     }
 
-    public Task<Recipe> GetById(int id)
+    public async Task<Recipe> GetById(int id)
     {
-        return _unitOfWork.Recipes.GetById(id);
+        var cachedEntity = await _cacheService.Get<Recipe>($"{typeof(Recipe)}-{id}");
+
+        if(cachedEntity != null)
+        {
+            return cachedEntity;
+        }
+
+        var entity = await _unitOfWork.Recipes.GetById(id);
+
+        _cacheService.Set($"{typeof(Recipe)}-{id}", entity, new MemoryCacheEntryOptions {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+        });
+
+        return entity;
     }
 
     public async Task<Recipe> UpdateAsync(Recipe entity)
     {
         var updatedEntity = _unitOfWork.Recipes.Update(entity);
         await _unitOfWork.CompleteAsync();
+
+        _cacheService.Set($"{typeof(Recipe)}-{entity.RecipeId}", updatedEntity, new MemoryCacheEntryOptions {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+        });
+
         return updatedEntity;
     }
 
@@ -113,6 +164,11 @@ public class RecipeService : IRecipeService
         _mapper.Map(recipe, updatedEntity);
         _unitOfWork.Recipes.Update(updatedEntity);
         await _unitOfWork.CompleteAsync();
+        
+        _cacheService.Set($"{typeof(Recipe)}-{id}", updatedEntity, new MemoryCacheEntryOptions {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
+        });
+
         return updatedEntity;
     }
 }

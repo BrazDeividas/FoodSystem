@@ -8,19 +8,16 @@ using Microsoft.AspNetCore.OutputCaching;
 
 namespace InternalAPI.Controllers;
 
-//remove pagination
 //move caching to service
 
 [Route("api/[controller]")]
 [ApiController]
 public class RecipeController : ControllerBase
 {
-    private readonly IUriService _uriService;
     private readonly IRecipeService _recipeService;
 
-    public RecipeController(IUriService uriService, IRecipeService recipeService)
+    public RecipeController(IRecipeService recipeService)
     {
-        _uriService = uriService;
         _recipeService = recipeService;
     }
 

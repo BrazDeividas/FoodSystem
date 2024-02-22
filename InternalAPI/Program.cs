@@ -14,7 +14,7 @@ builder.Services.AddDbContext<RecipeDbContext>(options =>
 
 builder.Services.AddMemoryCache();
 
-builder.Services.AddScoped(typeof(ICacheService<>), typeof(MemoryCacheService<>));
+builder.Services.AddScoped<ICacheService, MemoryCacheService>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

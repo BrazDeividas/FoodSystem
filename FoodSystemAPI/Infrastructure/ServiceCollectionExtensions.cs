@@ -31,6 +31,9 @@ public static class ServiceCollectionExtensions
             var uri = string.Concat(request.Scheme, "://", request.Host.ToUriComponent());
             return new UriService(uri);
         });
+
+        services.AddMemoryCache();
+        services.AddScoped<ICacheService, MemoryCacheService>();
     }
 
     public static void AddExceptionHandler(this IServiceCollection services)

@@ -1,6 +1,7 @@
 using Azure;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
+using FoodSystemAPI.Filters;
 using FoodSystemAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,9 +18,9 @@ public class RecipeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ReceiveServerRecipeDto>>> GetRecipesAsync([FromQuery] string searchQuery)
+    public async Task<ActionResult<IEnumerable<ReceiveServerRecipeDto>>> GetRecipesAsync([FromQuery] string searchQuery, [FromQuery] PaginationFilter paginationFilter) // form paged thing-y & fix paged thing-y after change xd
     {
-        var recipes = await _recipeService.GetRecipesAsync(searchQuery);
+        var recipes = await _recipeService.GetRecipesAsync(searchQuery, paginationFilter);
         if (recipes != null)
         {
             return Ok(recipes);

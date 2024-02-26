@@ -21,6 +21,12 @@ builder.Services.AddHttpAPIClient("api-1", (httpClient) =>
     httpClient.AddRapidAPIHeaders(builder.Configuration["APIs:api-1:Host"]!, builder.Configuration["APIs:api-1:Key"]!);
 });
 
+builder.Services.AddHttpAPIClient("api-2", (httpClient) =>
+{
+    httpClient.BaseAddress = new(builder.Configuration["APIs:api-2:Url"]!);
+    httpClient.AddRapidAPIHeaders(builder.Configuration["APIs:api-2:Host"]!, builder.Configuration["APIs:api-2:Key"]!);
+});
+
 builder.Services.AddHttpAPIClient("api-internal", (httpClient) =>
 {
     httpClient.BaseAddress = new(builder.Configuration["APIs:api-internal:Url"]!);

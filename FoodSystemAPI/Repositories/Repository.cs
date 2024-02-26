@@ -36,6 +36,11 @@ public class Repository<T> : IRepository<T> where T : class
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> expression)
+    {
+        return await _dbSet.Where(expression).ToListAsync();
+    }
+
     public async Task<T> GetById(int id)
     {
         return await _dbSet.FindAsync(id);

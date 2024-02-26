@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace FoodSystemAPI.Entities;
 
 public class MealPlanItem
@@ -8,6 +10,7 @@ public class MealPlanItem
     
     public int RecipeId { get; set; }
 
+    [JsonIgnore]
     public virtual MealPlan MealPlan { get; set; } = null!;
 
     public virtual Recipe Recipe { get; set; } = null!;

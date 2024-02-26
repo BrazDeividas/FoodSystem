@@ -1,6 +1,7 @@
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using AutoMapper;
+using FoodSystemAPI.DTOs.Tasty;
 
 namespace FoodSystemAPI.Profiles;
 
@@ -17,5 +18,15 @@ public class RecipeProfile : Profile
             .ForMember(dest => dest.Calories, opt => opt.MapFrom(src => 0))
             .ForMember(dest => dest.Servings, opt => opt.MapFrom(src => 0))
             .ForMember(dest => dest.Ingredients, opt => opt.MapFrom(src => src.Ingredients.Select(i => i.Value).ToList()));
+
+        CreateMap<Result, SendServerRecipeDto>()
+            .ForMember(dest => dest.SourceId, opt => opt.MapFrom(src => src.id))
+            .ForMember(dest => dest.SourceAPI, opt => opt.MapFrom(src => "tasty.p.rapidapi.com"))
+            .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.name))
+            .ForMember(dest => dest.Instructions, opt => opt.MapFrom(src => src.instructions.Select(x => x.display_text).ToList()))
+            .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.thumbnail_url))
+            .ForMember(dest => dest.Calories, opt => opt.MapFrom(src => src.nutrition.calories ?? 0))
+            .ForMember(dest => dest.Servings, opt => opt.MapFrom(src => src.num_servings))
+            .ForMember(dest => dest.Ingredients, opt => opt.MapFrom(src => src.sections.SelectMany(x => x.components).Select(x => x.raw_text).ToList()));
     }
 }

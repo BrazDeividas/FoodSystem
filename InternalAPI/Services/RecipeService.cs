@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using InternalAPI.DTOs;
+using InternalAPI.Filters;
 using InternalAPI.Models;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -68,19 +69,20 @@ public class RecipeService : IRecipeService
     
     public async Task<IEnumerable<Recipe>> GetAll(Expression<Func<Recipe, bool>> expression)
     {
-        var cachedEntities = await _cacheService.Get<IEnumerable<Recipe>>($"{typeof(Recipe)}-all-{expression.Body}");
-        
-        if(cachedEntities != null)
-        {
-            return cachedEntities;
-        }
-
         var entities = await _unitOfWork.Recipes.GetAll(expression);
-        _cacheService.Set($"{typeof(Recipe)}-all-{expression.Body}", entities, new MemoryCacheEntryOptions {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30),
-        });
-
         return entities;
+    }
+
+    public async Task<IEnumerable<Recipe>> GetAll(SearchFilter searchFilter)
+    {
+        Expression<Func<Recipe, bool>> filter = !string.IsNullOrEmpty(searchFilter.Search)
+        ? searchFilter.CalorieSum != 0
+        ? x => x.Title.Contains(searchFilter.Search) && Math.Abs(x.Calories - (searchFilter.CalorieSum / 3)) <= 100
+        : x => x.Title.Contains(searchFilter.Search)
+        : x => int.Abs(x.Calories - (searchFilter.CalorieSum / searchFilter.NumberOfMeals)) <= 100;
+
+        var entities = await GetAll(filter);
+        return entities.Take(searchFilter.NumberOfMeals);
     }
 
     public async Task<IEnumerable<Recipe>> GetAll()
@@ -161,6 +163,7 @@ public class RecipeService : IRecipeService
         {
             return null;
         }
+
         _mapper.Map(recipe, updatedEntity);
         _unitOfWork.Recipes.Update(updatedEntity);
         await _unitOfWork.CompleteAsync();

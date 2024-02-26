@@ -25,6 +25,12 @@ public class UserService : IUserService
         {
             return null;
         }
+
+        var userMetric = await _userMetricsRepository.GetAll(x => x.UserId == userMetrics.UserId);
+        if (userMetric.Any())
+        {
+            return null;
+        }
         var userMetricsEntity = _mapper.Map<PostUserMetricsDto, UserMetrics>(userMetrics);
         await _userMetricsRepository.Add(userMetricsEntity);
         _userMetricsRepository.Save();

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace FoodSystemAPI.DTOs;
 
 public class ReceiveServerRecipeDto
@@ -6,6 +8,7 @@ public class ReceiveServerRecipeDto
     public string Title { get; set; }
     public string Instructions { get; set; }
     public IEnumerable<string> Ingredients { get; set; } = new List<string>();
+    public IEnumerable<int> IngredientIds { get; set; } = new List<int>();
     public int Calories { get; set; }
     public int Servings { get; set; }
     public Uri ImageUrl { get; set; }

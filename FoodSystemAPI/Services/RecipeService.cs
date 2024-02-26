@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using AutoMapper;
 using FoodSystemAPI.DTOs;
+using FoodSystemAPI.DTOs.Tasty;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Filters;
 using FoodSystemAPI.Wrappers;
@@ -19,13 +20,15 @@ public class RecipeService : IRecipeService
     private readonly IMapper _mapper;
 
     private readonly ICacheService _cacheService;
+    private readonly IIngredientService _ingredientService;
 
-    public RecipeService(IHttpClientFactory httpClientFactory, IMapper mapper, ICacheService cacheService)
+    public RecipeService(IHttpClientFactory httpClientFactory, IMapper mapper, ICacheService cacheService, IIngredientService ingredientService)
     {
-        _apiClient = httpClientFactory.CreateClient("api-1");
+        _apiClient = httpClientFactory.CreateClient("api-2");
         _internalApiClient = httpClientFactory.CreateClient("api-internal");
         _mapper = mapper;
         _cacheService = cacheService;
+        _ingredientService = ingredientService;
     }
 
     public async Task<IEnumerable<ReceiveServerRecipeDto>> GetRecipesAsync(string searchQuery, PaginationFilter paginationFilter)
@@ -43,10 +46,20 @@ public class RecipeService : IRecipeService
         var result = response.Data;
         if (response.Data.IsNullOrEmpty())
         {
-            var responseAPI1 = await _apiClient.GetFromJsonAsync<RapidAPIDto_1>($"?q={searchQuery}");
-            if(!responseAPI1.d.IsNullOrEmpty())
+            //var responseAPI1 = await _apiClient.GetFromJsonAsync<RapidAPIDto_1>($"?q={searchQuery}");
+            var responseAPI = await _apiClient.GetFromJsonAsync<Root>($"?from=0&size=20&q={searchQuery}");
+
+            if(!responseAPI.results.IsNullOrEmpty())
             {
-                var internalRecipesToSend = _mapper.Map<IEnumerable<SendServerRecipeDto>>(responseAPI1.d);
+                var internalRecipesToSend = _mapper.Map<IEnumerable<SendServerRecipeDto>>(responseAPI.results);
+                
+                foreach(SendServerRecipeDto recipe in internalRecipesToSend)
+                {
+                    var ingredients = await _ingredientService.MatchIngredients(recipe.Ingredients);
+                    recipe.Ingredients = ingredients.Select(x => x.Description).ToList();
+                    recipe.IngredientIds = ingredients.Select(x => x.IngredientId).ToList();
+                }
+
                 var internalResult = await _internalApiClient.PostAsJsonAsync("api/Recipe", internalRecipesToSend);
                 if (internalResult.IsSuccessStatusCode)
                 {

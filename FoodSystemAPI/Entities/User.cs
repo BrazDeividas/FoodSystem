@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace FoodSystemAPI.Entities;
 
@@ -18,6 +19,6 @@ public class User
     public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
 
     public virtual UserMetrics UserMetrics { get; set; } = null!;
-
+    
     public virtual MealPlan MealPlan { get; set; } = null!;
 }

@@ -12,6 +12,7 @@ public class Recipe
     public string Instructions { get; set; }
     [Required]
     public virtual List<string> Ingredients { get; set; } = new List<string>();
+    public virtual List<int> IngredientIds { get; set; } = new List<int>();
     [Required]
     public int Calories { get; set; }
     [Required]

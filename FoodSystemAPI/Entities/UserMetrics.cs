@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace FoodSystemAPI.Entities;
 
@@ -36,6 +37,7 @@ public class UserMetrics
     public int Weight { get; set; }
 
     public ActivityLevelType ActivityLevel { get; set; }
-
+    
+    [JsonIgnore]
     public virtual User User { get; set; } = null!;
 } 

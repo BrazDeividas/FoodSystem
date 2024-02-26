@@ -1,12 +1,41 @@
+using Azure;
+using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
+using FoodSystemAPI.Repositories;
 
 namespace FoodSystemAPI.Services;
 
 public class MealPlanService : IMealPlanService
 {
-    public void PlanMealAsync(UserMetrics userMetrics)
+    private readonly IRepository<MealPlan> _mealPlanRepository;
+
+    private readonly HttpClient _internalApiClient;
+
+    public MealPlanService(IRepository<MealPlan> mealPlanRepository, IHttpClientFactory httpClientFactory)
     {
-        throw new NotImplementedException();
+        _mealPlanRepository = mealPlanRepository;
+        _internalApiClient = httpClientFactory.CreateClient("api-internal");
+    }
+
+    public async void PlanMealAsync(UserMetrics userMetrics, int numberOfMeals)
+    {
+        var mealPlan = await _mealPlanRepository.GetAll(x => x.UserId == userMetrics.UserId);
+        if (mealPlan.Any())
+        {
+            return;
+        }
+
+        var neededCalories = CalculateCaloricNeeds(userMetrics);
+
+        var mealPlanEntity = new MealPlan
+        {
+            UserId = userMetrics.UserId,
+            TotalCalories = (int)double.Ceiling(neededCalories)
+        };
+
+        
+
+        var response = await _internalApiClient.GetFromJsonAsync<Response<IEnumerable<ReceiveServerRecipeDto>>>("api/Recipe?search=healthy");
     }
 
     public double CalculateCaloricNeeds(UserMetrics userMetrics) // Mifflin-St Jeor Formula + Harris Benedict Equation for Caloric needs

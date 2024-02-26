@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using InternalAPI.DTOs;
+using InternalAPI.Filters;
 using InternalAPI.Models;
 using InternalAPI.Services;
 using InternalAPI.Wrappers;
@@ -7,8 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 
 namespace InternalAPI.Controllers;
-
-//move caching to service
 
 [Route("api/[controller]")]
 [ApiController]
@@ -23,18 +22,30 @@ public class RecipeController : ControllerBase
 
     [OutputCache(VaryByQueryKeys = ["search"])]
     [HttpGet]
-    public async Task<IActionResult> GetRecipes([FromQuery] string search = "")
+    public async Task<IActionResult> GetRecipes([FromQuery] string search)
+    {
+        var entities = !string.IsNullOrEmpty(search)
+        ? await _recipeService.GetAll(x => x.Title.Contains(search))
+        : await _recipeService.GetAll();
+
+        if (entities == null)
+        {
+            return NotFound();
+        }
+        return Ok(new Response<IEnumerable<Recipe>>(entities));
+    }
+
+    [OutputCache(VaryByQueryKeys = ["search", "caloriesum", "numberofmeals"])]
+    [HttpGet("byFilter")]
+    public async Task<IActionResult> GetRecipesByFilter([FromQuery] SearchFilter searchFilter)
     {
         IEnumerable<Recipe> entities;
 
-        if (!string.IsNullOrEmpty(search))
+        entities = await _recipeService.GetAll(searchFilter);
+
+        if (entities == null)
         {
-            Expression<Func<Recipe, bool>> filter = x => x.Title.Contains(search);
-            entities = await _recipeService.GetAll(filter);
-        }
-        else
-        {
-            entities = await _recipeService.GetAll();
+            return NotFound();
         }
 
         return Ok(new Response<IEnumerable<Recipe>>(entities));

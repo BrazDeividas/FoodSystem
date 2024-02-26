@@ -1,4 +1,3 @@
-using AutoMapper;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Services;
@@ -24,7 +23,7 @@ public class UserController : ControllerBase
         var userMetrics = await _userService.AddUserMetricsAsync(metrics);
         if (userMetrics == null)
         {
-            return NotFound(new Response<UserMetrics>("User not found"));
+            return NotFound(new Response<UserMetrics>("User not found or metrics already exist"));
         }
         return Ok(new Response<UserMetrics>(userMetrics));
     }

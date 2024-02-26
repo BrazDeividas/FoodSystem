@@ -12,6 +12,7 @@ public class CreateRecipeDTO
     public string Instructions { get; set; }
 /*     [Required] */
     public List<string> Ingredients { get; set; }
+    public List<int> IngredientIds { get; set; }
 /*     [Required]
     [Range(0, int.MaxValue)] */
     public int Calories { get; set; }

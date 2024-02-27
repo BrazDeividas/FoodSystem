@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace FoodSystemAPI.Entities;
 
@@ -9,15 +10,21 @@ public partial class Recipe
 
     public int UserId { get; set; }
 
-    public string Name { get; set; } = null!;
+    public string Title { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
+    public string Instructions { get; set; } = null!;
 
-    public int PreparationTime { get; set; }
+    public virtual IEnumerable<Ingredient> Ingredients { get; set; } = new List<Ingredient>();
 
-    public int CookingTime { get; set; }
+    public int Calories { get; set; }
 
     public int Servings { get; set; }
 
+    public Uri ImageUrl { get; set; } = null!;
+
+    [JsonIgnore]
     public virtual User User { get; set; } = null!;
+
+    [JsonIgnore]
+    public virtual MealPlanItem MealPlanItem { get; set; } = null!;
 }

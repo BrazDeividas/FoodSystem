@@ -38,6 +38,23 @@ public class UserService : IUserService
         return userMetricsEntity;
     }
 
+    public async Task<UserMetrics> GetUserMetricsByUserIdAsync(int userId)
+    {
+        var user = await _userRepository.GetById(userId);
+        if (user == null)
+        {
+            return null;
+        }
+
+        var userMetrics = await _userMetricsRepository.GetAll(x => x.UserId == userId);
+        if (!userMetrics.Any())
+        {
+            return null;
+        }
+
+        return userMetrics.First();
+    }
+
     public async Task<UserMetrics> UpdateUserMetricsAsync(PostUserMetricsDto userMetrics)
     {
         var entity = await _userMetricsRepository.GetById(userMetrics.UserId);

@@ -1,7 +1,7 @@
-using Azure;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Repositories;
+using FoodSystemAPI.Wrappers;
 
 namespace FoodSystemAPI.Services;
 
@@ -11,31 +11,55 @@ public class MealPlanService : IMealPlanService
 
     private readonly HttpClient _internalApiClient;
 
-    public MealPlanService(IRepository<MealPlan> mealPlanRepository, IHttpClientFactory httpClientFactory)
+    private readonly IRecipeService _recipeService;
+
+    public MealPlanService(IRepository<MealPlan> mealPlanRepository, IHttpClientFactory httpClientFactory, IRecipeService recipeService)
     {
         _mealPlanRepository = mealPlanRepository;
         _internalApiClient = httpClientFactory.CreateClient("api-internal");
+        _recipeService = recipeService;
     }
 
-    public async void PlanMealAsync(UserMetrics userMetrics, int numberOfMeals)
+    public async Task<MealPlan> PlanMealAsync(UserMetrics userMetrics, int numberOfMeals)
     {
-        var mealPlan = await _mealPlanRepository.GetAll(x => x.UserId == userMetrics.UserId);
+        var mealPlan = await _mealPlanRepository.GetAll(x => x.UserId == userMetrics.UserId && x.EndDate > DateTime.Now);
         if (mealPlan.Any())
         {
-            return;
+            return mealPlan.First();
         }
 
         var neededCalories = CalculateCaloricNeeds(userMetrics);
 
+        var response = await _internalApiClient.GetFromJsonAsync<Response<IEnumerable<ReceiveServerRecipeDto>>>($"api/Recipe/byFilter?calorieSum={(int)neededCalories}&numberOfMeals={numberOfMeals}");
+
+        if (response.Data.Count() < numberOfMeals) //TODO: fetch more recipes later
+        {
+            return null;
+        }
+
+        var recipeEntities = await _recipeService.AddRecipesForUserAsync(response.Data, userMetrics.UserId);
+
         var mealPlanEntity = new MealPlan
         {
             UserId = userMetrics.UserId,
-            TotalCalories = (int)double.Ceiling(neededCalories)
+            TotalCalories = (int)double.Ceiling(neededCalories),
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddDays(1)
         };
 
-        
+        foreach (var recipe in recipeEntities)
+        {
+            mealPlanEntity.MealPlanItems.Add(new MealPlanItem
+            {
+                RecipeId = recipe.RecipeId,
+                MealPlanId = mealPlanEntity.MealPlanId
+            });
+        }
 
-        var response = await _internalApiClient.GetFromJsonAsync<Response<IEnumerable<ReceiveServerRecipeDto>>>("api/Recipe?search=healthy");
+        await _mealPlanRepository.Add(mealPlanEntity);
+        _mealPlanRepository.Save();
+
+        return mealPlanEntity;
     }
 
     public double CalculateCaloricNeeds(UserMetrics userMetrics) // Mifflin-St Jeor Formula + Harris Benedict Equation for Caloric needs

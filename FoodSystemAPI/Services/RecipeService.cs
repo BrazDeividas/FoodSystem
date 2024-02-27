@@ -1,10 +1,9 @@
-using System.Text;
-using System.Text.Json;
 using AutoMapper;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.DTOs.Tasty;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Filters;
+using FoodSystemAPI.Repositories;
 using FoodSystemAPI.Wrappers;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
@@ -14,21 +13,22 @@ namespace FoodSystemAPI.Services;
 public class RecipeService : IRecipeService
 {
     private readonly HttpClient _apiClient;
-
     private readonly HttpClient _internalApiClient;
-
     private readonly IMapper _mapper;
-
     private readonly ICacheService _cacheService;
     private readonly IIngredientService _ingredientService;
+    private readonly IRepository<Recipe> _recipeRepository; 
+    private readonly IRepository<RecipeIngredient> _recipeIngredientRepository;
 
-    public RecipeService(IHttpClientFactory httpClientFactory, IMapper mapper, ICacheService cacheService, IIngredientService ingredientService)
+    public RecipeService(IHttpClientFactory httpClientFactory, IMapper mapper, ICacheService cacheService, IIngredientService ingredientService, IRepository<Recipe> recipeRepository, IRepository<RecipeIngredient> recipeIngredientRepository)
     {
         _apiClient = httpClientFactory.CreateClient("api-2");
         _internalApiClient = httpClientFactory.CreateClient("api-internal");
         _mapper = mapper;
         _cacheService = cacheService;
         _ingredientService = ingredientService;
+        _recipeRepository = recipeRepository;
+        _recipeIngredientRepository = recipeIngredientRepository;
     }
 
     public async Task<IEnumerable<ReceiveServerRecipeDto>> GetRecipesAsync(string searchQuery, PaginationFilter paginationFilter)
@@ -85,5 +85,30 @@ public class RecipeService : IRecipeService
     {
         var response = await _internalApiClient.GetFromJsonAsync<Response<IEnumerable<ReceiveServerRecipeDto>>>($"api/Recipe/byIngredients?ingredients={ingredients}");
         return response.Data;
+    }
+    
+    public async Task<IEnumerable<Recipe>> AddRecipesForUserAsync(IEnumerable<ReceiveServerRecipeDto> recipes, int userId)
+    {
+        var recipeEntities = _mapper.Map<IEnumerable<Recipe>>(recipes);
+
+        for(int i = 0; i < recipeEntities.Count(); i++)
+        {
+            recipeEntities.ElementAt(i).UserId = userId;
+
+            await _recipeRepository.Add(recipeEntities.ElementAt(i));
+
+            await _ingredientService.GetAll(x => recipes.ElementAt(i).IngredientIds.Contains(x.IngredientId))
+                .ContinueWith(task => {
+                    var ingredients = task.Result;
+                    foreach(Entities.Ingredient ingredient in ingredients)
+                    {
+                        _recipeIngredientRepository.Add(new RecipeIngredient { RecipeId = recipeEntities.ElementAt(i).RecipeId, IngredientId = ingredient.IngredientId });
+                    }
+                });
+        }
+
+        _recipeRepository.Save();
+        
+        return recipeEntities;
     }
 }

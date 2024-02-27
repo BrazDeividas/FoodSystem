@@ -7,6 +7,6 @@ namespace FoodSystemAPI.Services;
 public interface IRecipeService
 {
     Task<IEnumerable<ReceiveServerRecipeDto>> GetRecipesAsync(string searchQuery, PaginationFilter paginationFilter);
-
     Task<IEnumerable<ReceiveServerRecipeDto>> GetRecipesByIngredientsAsync(string ingredients);
+    Task<IEnumerable<Recipe>> AddRecipesForUserAsync(IEnumerable<ReceiveServerRecipeDto> recipe, int userId);
 }

@@ -41,6 +41,16 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.Where(expression).ToListAsync();
     }
 
+    public async Task<IEnumerable<T>> GetAllInclude(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes)
+    {
+        var query = _dbSet.Where(expression);
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+        return await query.ToListAsync();
+    }
+
     public async Task<T> GetById(int id)
     {
         return await _dbSet.FindAsync(id);

@@ -95,19 +95,26 @@ public partial class FoodDbContext : DbContext
             entity.ToTable("recipe");
 
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
-            entity.Property(e => e.CookingTime).HasColumnName("cooking_time");
-            entity.Property(e => e.Description)
-                .HasMaxLength(4000)
-                .IsUnicode(false)
-                .HasColumnName("description");
-            entity.Property(e => e.Name)
+            entity.Property(e => e.Title)
                 .HasMaxLength(50)
                 .IsUnicode(false)
-                .HasColumnName("name");
-            entity.Property(e => e.PreparationTime).HasColumnName("preparation_time");
+                .HasColumnName("title");
             entity.Property(e => e.Servings).HasColumnName("servings");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Instructions)
+                .HasMaxLength(4000)
+                .IsUnicode(false)
+                .HasColumnName("instructions");
+            entity.Property(e => e.Calories).HasColumnName("calories");
+            entity.Property(e => e.ImageUrl)
+                .HasMaxLength(256)
+                .IsUnicode(false)
+                .HasColumnName("image_url");
 
+            entity.HasOne(d => d.MealPlanItem).WithOne(m => m.Recipe)
+                .HasForeignKey<Recipe>(d => d.RecipeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_recipe_meal_plan_item");
             entity.HasOne(d => d.User).WithMany(p => p.Recipes)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -196,6 +203,7 @@ public partial class FoodDbContext : DbContext
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.StartDate).HasColumnName("start_date");
             entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.TotalCalories).HasColumnName("total_calories");
 
             entity.HasOne(d => d.User).WithOne(p => p.MealPlan)
                 .HasForeignKey<MealPlan>(d => d.UserId)
@@ -217,8 +225,8 @@ public partial class FoodDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_meal_plan_item_meal_plan");
             
-            entity.HasOne(d => d.Recipe).WithMany()
-                .HasForeignKey(d => d.RecipeId)
+            entity.HasOne(d => d.Recipe).WithOne(x => x.MealPlanItem)
+                .HasForeignKey<MealPlanItem>(d => d.RecipeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_meal_plan_item_recipe");
         });

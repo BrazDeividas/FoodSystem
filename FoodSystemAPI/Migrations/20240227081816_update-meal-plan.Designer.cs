@@ -4,6 +4,7 @@ using FoodSystemAPI.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FoodSystemAPI.Migrations
 {
     [DbContext(typeof(FoodDbContext))]
-    partial class FoodDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240227081816_update-meal-plan")]
+    partial class updatemealplan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -115,9 +118,6 @@ namespace FoodSystemAPI.Migrations
                         .HasColumnType("float")
                         .HasColumnName("protein_g");
 
-                    b.Property<int?>("RecipeId")
-                        .HasColumnType("int");
-
                     b.Property<double>("RiboflavinMg")
                         .HasColumnType("float")
                         .HasColumnName("riboflavin_mg");
@@ -174,8 +174,6 @@ namespace FoodSystemAPI.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("RecipeId");
-
                     b.ToTable("ingredient", (string)null);
                 });
 
@@ -197,8 +195,7 @@ namespace FoodSystemAPI.Migrations
                         .HasColumnName("start_date");
 
                     b.Property<int>("TotalCalories")
-                        .HasColumnType("int")
-                        .HasColumnName("total_calories");
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int")
@@ -233,8 +230,7 @@ namespace FoodSystemAPI.Migrations
 
                     b.HasIndex("MealPlanId");
 
-                    b.HasIndex("RecipeId")
-                        .IsUnique();
+                    b.HasIndex("RecipeId");
 
                     b.ToTable("meal_plan_item", (string)null);
                 });
@@ -248,34 +244,31 @@ namespace FoodSystemAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecipeId"));
 
-                    b.Property<int>("Calories")
+                    b.Property<int>("CookingTime")
                         .HasColumnType("int")
-                        .HasColumnName("calories");
+                        .HasColumnName("cooking_time");
 
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(256)")
-                        .HasColumnName("image_url");
-
-                    b.Property<string>("Instructions")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(4000)
                         .IsUnicode(false)
                         .HasColumnType("varchar(4000)")
-                        .HasColumnName("instructions");
+                        .HasColumnName("description");
 
-                    b.Property<int>("Servings")
-                        .HasColumnType("int")
-                        .HasColumnName("servings");
-
-                    b.Property<string>("Title")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .IsUnicode(false)
                         .HasColumnType("varchar(50)")
-                        .HasColumnName("title");
+                        .HasColumnName("name");
+
+                    b.Property<int>("PreparationTime")
+                        .HasColumnType("int")
+                        .HasColumnName("preparation_time");
+
+                    b.Property<int>("Servings")
+                        .HasColumnType("int")
+                        .HasColumnName("servings");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int")
@@ -410,10 +403,6 @@ namespace FoodSystemAPI.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_ingredient_category");
 
-                    b.HasOne("FoodSystemAPI.Entities.Recipe", null)
-                        .WithMany("Ingredients")
-                        .HasForeignKey("RecipeId");
-
                     b.Navigation("Category");
                 });
 
@@ -437,8 +426,8 @@ namespace FoodSystemAPI.Migrations
                         .HasConstraintName("FK_meal_plan_item_meal_plan");
 
                     b.HasOne("FoodSystemAPI.Entities.Recipe", "Recipe")
-                        .WithOne("MealPlanItem")
-                        .HasForeignKey("FoodSystemAPI.Entities.MealPlanItem", "RecipeId")
+                        .WithMany()
+                        .HasForeignKey("RecipeId")
                         .IsRequired()
                         .HasConstraintName("FK_meal_plan_item_recipe");
 
@@ -496,14 +485,6 @@ namespace FoodSystemAPI.Migrations
             modelBuilder.Entity("FoodSystemAPI.Entities.MealPlan", b =>
                 {
                     b.Navigation("MealPlanItems");
-                });
-
-            modelBuilder.Entity("FoodSystemAPI.Entities.Recipe", b =>
-                {
-                    b.Navigation("Ingredients");
-
-                    b.Navigation("MealPlanItem")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("FoodSystemAPI.Entities.User", b =>

@@ -77,9 +77,9 @@ public class RecipeService : IRecipeService
     {
         Expression<Func<Recipe, bool>> filter = !string.IsNullOrEmpty(searchFilter.Search)
         ? searchFilter.CalorieSum != 0
-        ? x => x.Title.Contains(searchFilter.Search) && Math.Abs(x.Calories - (searchFilter.CalorieSum / 3)) <= 100
+        ? x => x.Title.Contains(searchFilter.Search) && Math.Abs(x.Calories - (searchFilter.CalorieSum / 3)) <= 150
         : x => x.Title.Contains(searchFilter.Search)
-        : x => int.Abs(x.Calories - (searchFilter.CalorieSum / searchFilter.NumberOfMeals)) <= 100;
+        : x => int.Abs(x.Calories - (searchFilter.CalorieSum / searchFilter.NumberOfMeals)) <= 150;
 
         var entities = await GetAll(filter);
         return entities.Take(searchFilter.NumberOfMeals);

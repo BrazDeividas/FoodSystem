@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Services;
@@ -15,6 +16,17 @@ public class UserController : ControllerBase
     public UserController(IUserService userService)
     {
         _userService = userService;
+    }
+
+    [HttpGet("metrics/{userId}")]
+    public async Task<ActionResult<Response<UserMetrics>>> GetMetrics(int userId)
+    {
+        var userMetrics = await _userService.GetUserMetricsByUserIdAsync(userId);
+        if (userMetrics == null)
+        {
+            return NotFound(new Response<UserMetrics>("User not found"));
+        }
+        return Ok(new Response<UserMetrics>(userMetrics));
     }
 
     [HttpPost("metrics")]

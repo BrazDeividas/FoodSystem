@@ -1,0 +1,110 @@
+@page "/usermetrics"
+@using FoodSystemClient.Services
+@using FoodSystemClient.DTOs
+@using System.Text.Json
+@inject IUserService userService
+@inject IJSRuntime jsRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Adding User Metrics</PageTitle>
+
+<EditForm Model="@Model" OnValidSubmit="@AddUserMetricsAsync" FormName="UserMetrics">
+    <div>
+        <div>
+            <label>
+                User Id:
+                <InputText @bind-Value="UserId"/>
+            </label>
+        </div>
+        <fieldset>
+            <label>Sex</label>
+            <InputRadioGroup @bind-Value="Model!.Sex">
+                @foreach (var sex in Enum.GetValues<Models.UserMetrics.SexType>())
+                {
+                    <span>
+                        <label>
+                            <InputRadio Value="sex" />
+                            @sex
+                        </label>
+                    </span>
+                }
+            </InputRadioGroup>
+        </fieldset>
+        <div>
+            <label>
+                Height:
+                <InputNumber @bind-Value="Model!.Height"/>
+            </label>
+        </div>
+        <div>
+            <label>
+                Weight:
+                <InputNumber @bind-Value="Model!.Weight"/>
+            </label>
+        </div>
+        <div>
+            <label>
+                Age:
+                <InputNumber @bind-Value="Model!.Age"/>
+            </label>
+        </div>
+        <div>
+            <label>
+                Activity Level:
+                <InputSelect @bind-Value="Model!.ActivityLevel">
+                    @foreach (var activityLevel in Enum.GetValues<Models.UserMetrics.ActivityLevelType>())
+                    {
+                        <option value="@activityLevel">@activityLevel</option>
+                    }
+                </InputSelect>
+            </label>
+        </div>
+    </div>
+    <div>
+        <button type="submit">Add User Metrics</button>
+    </div>
+
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    private Models.UserMetrics? Model { get; set;}
+    
+    private final List<string> SexValues = ["Male", "Female"];
+
+    private string? _ModelClone;
+
+    private string? UserId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitializedAsync();
+
+        Model ??= new();
+        UserId = "";
+        if (Model != null)
+        {
+            _ModelClone = JsonSerializer.Serialize(Model);
+        }
+    }
+
+    private async void AddUserMetricsAsync()
+    {
+        int responseCode = await userService.PostUserMetrics(Model!, int.Parse(UserId));
+        if (responseCode == 200)
+        {
+            await jsRuntime.InvokeVoidAsync("alert", "User Metrics Added Successfully");
+            Reset();
+        }
+        else
+        {
+            await jsRuntime.InvokeVoidAsync("alert", "Server Error: User Metrics Not Added");
+        }
+    }
+
+    private void Reset()
+    {
+        Model = JsonSerializer.Deserialize<Models.UserMetrics>(_ModelClone!);
+    }
+
+}

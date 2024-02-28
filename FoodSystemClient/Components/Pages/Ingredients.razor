@@ -64,14 +64,21 @@ else
             "api/ingredient");
         request.Headers.Add("Accept", "application/json");
 
-        var response = await client.SendAsync(request);
-
-        if(response.IsSuccessStatusCode)
+        try
         {
-            responseIngredients = await response.Content.ReadFromJsonAsync<PagedResponse<Ingredient[]>>();
-            ingredients = responseIngredients.Data;
+            var response = await client.SendAsync(request);
+
+            if(response.IsSuccessStatusCode)
+            {
+                responseIngredients = await response.Content.ReadFromJsonAsync<PagedResponse<Ingredient[]>>();
+                ingredients = responseIngredients.Data;
+            }
+            else
+            {
+                getIngredientsError = true;
+            }
         }
-        else
+        catch (HttpRequestException)
         {
             getIngredientsError = true;
         }

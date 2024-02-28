@@ -8,77 +8,29 @@
 
 <PageTitle>Adding User Metrics</PageTitle>
 
-<EditForm Model="@Model" OnValidSubmit="@AddUserMetricsAsync" FormName="UserMetrics">
-    <div>
-        <div>
-            <label>
-                User Id:
-                <InputText @bind-Value="UserId"/>
-            </label>
-        </div>
-        <fieldset>
-            <label>Sex</label>
-            <InputRadioGroup @bind-Value="Model!.Sex">
-                @foreach (var sex in Enum.GetValues<Models.UserMetrics.SexType>())
-                {
-                    <span>
-                        <label>
-                            <InputRadio Value="sex" />
-                            @sex
-                        </label>
-                    </span>
-                }
-            </InputRadioGroup>
-        </fieldset>
-        <div>
-            <label>
-                Height:
-                <InputNumber @bind-Value="Model!.Height"/>
-            </label>
-        </div>
-        <div>
-            <label>
-                Weight:
-                <InputNumber @bind-Value="Model!.Weight"/>
-            </label>
-        </div>
-        <div>
-            <label>
-                Age:
-                <InputNumber @bind-Value="Model!.Age"/>
-            </label>
-        </div>
-        <div>
-            <label>
-                Activity Level:
-                <InputSelect @bind-Value="Model!.ActivityLevel">
-                    @foreach (var activityLevel in Enum.GetValues<Models.UserMetrics.ActivityLevelType>())
-                    {
-                        <option value="@activityLevel">@activityLevel</option>
-                    }
-                </InputSelect>
-            </label>
-        </div>
-    </div>
-    <div>
-        <button type="submit">Add User Metrics</button>
-    </div>
-
-</EditForm>
+<ValidateForm Model="@Model" OnValidSubmit="@AddUserMetricsAsync">
+    <EditorForm TModel="Models.UserMetrics">
+        <Buttons>
+            <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-paper-plane" Text="Send" />
+        </Buttons>
+    </EditorForm>
+</ValidateForm>
 
 @code {
     [SupplyParameterFromForm]
     private Models.UserMetrics? Model { get; set;}
     
-    private final List<string> SexValues = ["Male", "Female"];
+    private List<string> SexValues = ["Male", "Female"];
 
     private string? _ModelClone;
 
     private string? UserId { get; set; }
 
+    private bool isValid { get; set; } = true;
+
     protected override async Task OnInitializedAsync()
     {
-        base.OnInitializedAsync();
+        await base.OnInitializedAsync();
 
         Model ??= new();
         UserId = "";
@@ -88,8 +40,15 @@
         }
     }
 
-    private async void AddUserMetricsAsync()
+    private async Task AddUserMetricsAsync(EditContext context)
     {
+        isValid = context.Validate();
+
+        if (!isValid)
+        {
+            return;
+        }
+
         int responseCode = await userService.PostUserMetrics(Model!, int.Parse(UserId));
         if (responseCode == 200)
         {

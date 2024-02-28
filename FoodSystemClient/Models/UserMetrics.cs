@@ -1,10 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace FoodSystemClient.Models;
 
 public class UserMetrics
 {
     public enum SexType
     {
-        Unknown = 0,
         Male = 1,
         Female = 2
     };
@@ -18,9 +19,17 @@ public class UserMetrics
         ExtraActive = 5
     };
 
+    [Required]
     public SexType Sex { get; set; }
+    [Required]
+    [Range(1, 120)]
     public int Age { get; set; }
+    [Required]
+    [Range(1, 300)]
     public int Height { get; set; }
+    [Required]
+    [Range(1, 500)]
     public int Weight { get; set; }
+    [Required]
     public ActivityLevelType ActivityLevel { get; set; }
 }

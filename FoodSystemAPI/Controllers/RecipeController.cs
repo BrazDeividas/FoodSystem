@@ -1,12 +1,12 @@
-using Azure;
 using FoodSystemAPI.DTOs;
-using FoodSystemAPI.Entities;
 using FoodSystemAPI.Filters;
 using FoodSystemAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodSystemAPI.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class RecipeController : ControllerBase

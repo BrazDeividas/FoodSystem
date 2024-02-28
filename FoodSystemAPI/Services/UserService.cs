@@ -18,15 +18,15 @@ public class UserService : IUserService
         _mapper = mapper;
     }
 
-    public async Task<UserMetrics> AddUserMetricsAsync(PostUserMetricsDto userMetrics)
+    public async Task<UserMetrics> AddUserMetricsAsync(PostUserMetricsDto userMetrics, int userId)
     {
-        var user = await _userRepository.GetById(userMetrics.UserId);
+        var user = await _userRepository.GetById(userId);
         if (user == null)
         {
             return null;
         }
 
-        var userMetric = await _userMetricsRepository.GetAll(x => x.UserId == userMetrics.UserId);
+        var userMetric = await _userMetricsRepository.GetAll(x => x.UserId == userId);
         if (userMetric.Any())
         {
             return null;
@@ -55,12 +55,12 @@ public class UserService : IUserService
         return userMetrics.First();
     }
 
-    public async Task<UserMetrics> UpdateUserMetricsAsync(PostUserMetricsDto userMetrics)
+    public async Task<UserMetrics> UpdateUserMetricsAsync(PostUserMetricsDto userMetrics, int userId)
     {
-        var entity = await _userMetricsRepository.GetById(userMetrics.UserId);
+        var entity = await _userMetricsRepository.GetById(userId);
         if (entity == null)
         {
-            var user = await _userRepository.GetById(userMetrics.UserId);
+            var user = await _userRepository.GetById(userId);
             if (user == null)
             {
                 return null;
@@ -77,5 +77,10 @@ public class UserService : IUserService
         _userMetricsRepository.Update(entity);
         _userMetricsRepository.Save();
         return entity;
+    }
+
+    public async Task<User> GetUserByUsername(string username)
+    {
+        return (await _userRepository.GetAll(x => x.Username == username)).FirstOrDefault();
     }
 }

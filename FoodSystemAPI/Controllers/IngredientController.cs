@@ -7,10 +7,12 @@ using FoodSystemAPI.Filters;
 using FoodSystemAPI.Helpers;
 using FoodSystemAPI.Services;
 using FoodSystemAPI.Wrappers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodSystemAPI.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class IngredientController : ControllerBase

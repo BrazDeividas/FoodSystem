@@ -1,4 +1,4 @@
-@page "/usermetrics"
+@page "/user-metrics"
 @using FoodSystemClient.Services
 @using FoodSystemClient.DTOs
 @using System.Text.Json
@@ -11,7 +11,7 @@
 <ValidateForm Model="@Model" OnValidSubmit="@AddUserMetricsAsync">
     <EditorForm TModel="Models.UserMetrics">
         <Buttons>
-            <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-paper-plane" Text="Send" />
+            <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-paper-plane" Text="Send" IsAsync="true" />
         </Buttons>
     </EditorForm>
 </ValidateForm>

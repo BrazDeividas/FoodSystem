@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Claims;
 using FoodSystemClient.DTOs;
 using FoodSystemClient.Models;
 using FoodSystemClient.Wrappers;
@@ -12,6 +13,27 @@ public class UserService : IUserService
     public UserService(IHttpClientFactory clientFactory)
     {
         _httpClient = clientFactory.CreateClient("FoodSystemAPI");
+    }
+
+    public async Task<ClaimsPrincipal> LoginAsync(string username)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/User/login", new { Username = username });
+        if(response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadFromJsonAsync<ResponseLoginDto>().ContinueWith(task =>
+            {
+                var responseLoginDto = task.Result;
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, username),
+                    new Claim("AccessToken", responseLoginDto!.accessToken)
+                };
+                var identity = new ClaimsIdentity(claims, "Bearer");
+                var principal = new ClaimsPrincipal(identity);
+                return principal;
+            });
+        }
+        return null!;
     }
 
     public async Task<UserMetrics> GetUserMetrics(int userId)

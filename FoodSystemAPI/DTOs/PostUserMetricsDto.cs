@@ -4,7 +4,6 @@ namespace FoodSystemAPI.DTOs;
 
 public class PostUserMetricsDto
 {
-    public int UserId { get; set; }
     [Range(1, 500)]
     public int Weight { get; set; }
     [Range(1, 300)]

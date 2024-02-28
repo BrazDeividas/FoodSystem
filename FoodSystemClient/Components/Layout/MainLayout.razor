@@ -1,27 +1,96 @@
 ﻿@inherits LayoutComponentBase
+@using FoodSystemClient.Services
+@using Microsoft.AspNetCore.Components.Authorization
 
-
-    
-    <div class="page">
-        <div class="sidebar">
-            <NavMenu />
+    <BootstrapBlazorRoot>
+        <div>
+            <Layout IsPage="true">
+                <Header>
+                    <div class="d-flex justify-content-start align-items-center header">Meal Planner</div>
+                </Header>
+                <Side>
+                    <div style="border-right: 1px solid rgba(0, 0, 0, 0.125); padding: 6px 0;">
+                        <Menu Items="@LoggedInStateSideMenuItems" IsVertical="true"/>
+                        @* <AuthorizeView>
+                            <Authorized> *@
+                            @* </Authorized>
+                            <NotAuthorized>
+                                <Menu Items="@LoggedOutStateMenuItems" />
+                            </NotAuthorized>
+                        </AuthorizeView> *@
+                    </div>
+                </Side>
+                <Main>
+                    <div style="padding: 1rem;">@Body</div>
+                </Main>
+                <Footer>
+                    <div class="d-flex justify-content-center align-items-center footer">Footer</div>
+                </Footer>
+            </Layout>
         </div>
+    </BootstrapBlazorRoot>
 
-        <main>
-            <div class="top-row px-4">
-                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+    @* <BootstrapBlazorRoot>
+        <div class="page">
+            <div class="sidebar">
+                <NavMenu />
             </div>
 
-            <BootstrapBlazorRoot>
+            <main>
+                <div class="top-row px-4">
+                    <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+                </div>
+
                 <article class="content px-4">
                     @Body
                 </article>
-            </BootstrapBlazorRoot>
-        </main>
-    </div>
+            </main>
+        </div>
+    </BootstrapBlazorRoot> *@
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+
+@code {
+    private List<MenuItem> LoggedOutStateMenuItems { get; set; }
+
+    private List<MenuItem> LoggedInStateSideMenuItems { get; set; }
+
+    private bool isLoggedIn { get; set; } = true;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        @* await base.OnInitializedAsync();
+
+        if(authenticationState != null)
+        {
+            var authState = await authenticationState;
+            var user = authState?.User;
+
+            if(user?.Identity != null && user.Identity.IsAuthenticated)
+            {
+                isLoggedIn = true;
+            }
+        } *@
+
+        LoggedOutStateMenuItems = new List<MenuItem>
+        {
+            new MenuItem() { Text = "Login", Icon = "fa-solid fa-right-to-bracket", Url = "/login"}
+        };
+
+        LoggedInStateSideMenuItems = new List<MenuItem>
+        {
+            new MenuItem() { Text = "User Metrics", Icon = "fa-solid fa-circle-info", Url = "/user-metrics"},
+            new MenuItem() { Text = "Meal Plan", Icon = "fa-solid fa-tasks", Url = "/meal-plans"},
+            new MenuItem() { Text = "Recipes", Icon = "fa-solid fa-book", Url = "/recipes" },
+            new MenuItem() { Text = "Ingredients", Icon = "fa-solid fa-layer-group", Url = "/ingredients"}
+        };
+    }
+}

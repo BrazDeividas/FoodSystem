@@ -74,7 +74,7 @@ public class MealPlanService : IMealPlanService
             UserMetrics.ActivityLevelType.LightlyActive => 1.375,
             UserMetrics.ActivityLevelType.ModeratelyActive => 1.55,
             UserMetrics.ActivityLevelType.VeryActive => 1.725,
-            UserMetrics.ActivityLevelType.ExtraActive => 1.9
+            UserMetrics.ActivityLevelType.ExtraActive => 1.9,
         };
     }
 }

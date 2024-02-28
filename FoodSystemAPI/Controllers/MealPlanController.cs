@@ -1,10 +1,12 @@
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Services;
 using FoodSystemAPI.Wrappers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodSystemAPI.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class MealPlanController : ControllerBase

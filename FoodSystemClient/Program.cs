@@ -1,5 +1,6 @@
 using FoodSystemClient.Components;
 using FoodSystemClient.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +10,12 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddBootstrapBlazor();
 
+
+/* builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>(); */
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<StorageService>();
 builder.Services.AddHttpClient("FoodSystemAPI", client =>
 {
     client.BaseAddress = new Uri("http://localhost:5173/");

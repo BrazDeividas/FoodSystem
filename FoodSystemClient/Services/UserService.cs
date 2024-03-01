@@ -1,5 +1,8 @@
 using System.Diagnostics;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using FoodSystemClient.Authentication;
 using FoodSystemClient.DTOs;
 using FoodSystemClient.Models;
 using FoodSystemClient.Wrappers;
@@ -9,10 +12,12 @@ namespace FoodSystemClient.Services;
 public class UserService : IUserService
 {
     private readonly HttpClient _httpClient;
+    private TokenProvider _tokenProvider;
 
-    public UserService(IHttpClientFactory clientFactory)
+    public UserService(IHttpClientFactory clientFactory, TokenProvider tokenProvider)
     {
         _httpClient = clientFactory.CreateClient("FoodSystemAPI");
+        _tokenProvider = tokenProvider;
     }
 
     public async Task<ClaimsPrincipal> LoginAsync(string username)
@@ -22,11 +27,13 @@ public class UserService : IUserService
         {
             return await response.Content.ReadFromJsonAsync<ResponseLoginDto>().ContinueWith(task =>
             {
-                var responseLoginDto = task.Result;
+                _tokenProvider.AccessToken = task.Result!.accessToken;
+                _tokenProvider.RefreshToken = task.Result!.refreshToken;
+                _tokenProvider.ExpiresIn = task.Result!.expiresIn;
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, username),
-                    new Claim("AccessToken", responseLoginDto!.accessToken)
+                    new Claim("AccessToken", task.Result!.accessToken)
                 };
                 var identity = new ClaimsIdentity(claims, "Bearer");
                 var principal = new ClaimsPrincipal(identity);
@@ -36,23 +43,33 @@ public class UserService : IUserService
         return null!;
     }
 
-    public async Task<UserMetrics> GetUserMetrics(int userId)
+    public async Task<UserMetrics> GetUserMetrics()
     {
-        var response = await _httpClient.GetFromJsonAsync<Response<UserMetrics>>($"api/User/metrics/{userId}");
-        
-        if (response.Data == null)
+        var request = new HttpRequestMessage(HttpMethod.Get, $"api/User/metrics");
+        request.Headers.Add("Authorization", $"Bearer {_tokenProvider.AccessToken}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        var responseBody = await response.Content.ReadFromJsonAsync<Response<UserMetrics>>();
+
+        if (responseBody == null)
         {
             return null;
         }
         
-        return response.Data;
+        return responseBody.Data;
     }
 
-    public async Task<int> PostUserMetrics(UserMetrics userMetrics, int userId)
+    public async Task<bool> PostUserMetrics(UserMetrics userMetrics)
     {
+        var request = new HttpRequestMessage(HttpMethod.Put, "api/User/metrics");
+        request.Headers.Add("Authorization", $"Bearer {_tokenProvider.AccessToken}");
         var userMetricsDto = new PostUserMetricsDto
         {
-            UserId = userId,
             Age = userMetrics.Age,
             Height = userMetrics.Height,
             Weight = userMetrics.Weight,
@@ -60,8 +77,15 @@ public class UserService : IUserService
             ActivityLevel = userMetrics.ActivityLevel.ToString()
         };
 
-        var response = await _httpClient.PostAsJsonAsync("api/User/metrics", userMetricsDto);
+        request.Content = new StringContent(JsonSerializer.Serialize(userMetricsDto), Encoding.UTF8, "application/json");
 
-        return (int)response.StatusCode;
+        var response = await _httpClient.SendAsync(request);
+
+        if(response.IsSuccessStatusCode)
+        {
+            return true;
+        }
+
+        return false;
     }
 }

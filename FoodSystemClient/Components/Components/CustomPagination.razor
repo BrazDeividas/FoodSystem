@@ -1,0 +1,124 @@
+﻿@namespace FoodSystemClient.Components.Components
+@using System
+@using System.Collections.Generic
+
+@if (TotalPages > 1)
+{
+    <div style="width: 100%; display: flex; justify-content: center;">
+        <nav>
+            <ul class="pagination">
+                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" disabled="@IsFirstPage()" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                </li>
+
+                <li class="page-item @(CurrentPage == 1 ? "active" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(1)">1</button>
+                </li>
+
+                @if (TotalPages <= 10)
+                {
+   
+                    @for (int i = 2; i <= TotalPages - 1; i++)
+                    {
+                        int pageNumber = i; // Create a local copy of i
+                        <li class="page-item @(i == CurrentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                        </li>
+                    }
+                }
+                else if(CurrentPage >= TotalPages - 4)
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    @for (int i = TotalPages - 5; i <= TotalPages && i <= TotalPages - 1; i++)
+                    {
+                        int pageNumber = i; // Create a local copy of i
+                        <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                        </li>
+                    }
+                }
+                else if(CurrentPage >= TotalPages - 6)
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    @for (int i = CurrentPage - 2; i <= TotalPages && i <= TotalPages - 1; i++)
+                    {
+                        int pageNumber = i; // Create a local copy of i
+                        <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                        </li>
+                    }
+                }
+                else if(CurrentPage < 4)
+                {
+                    @for (int i = 2; i <= TotalPages && i <= 5; i++)
+                    {
+                        int pageNumber = i; // Create a local copy of i
+                        <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                        </li>
+                    }
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                }
+                else if(CurrentPage >= 6)
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    @for (int i = CurrentPage - 2; i <= TotalPages && i <= CurrentPage + 2; i++)
+                    {
+                        int pageNumber = i; // Create a local copy of i
+                        <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                        </li>
+                    }
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                }
+                else if(CurrentPage >= 4)
+                {
+                    @for (int i = 2; i <= TotalPages && i <= CurrentPage + 2; i++)
+                    {
+                        int pageNumber = i; // Create a local copy of i
+                        <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                        </li>
+                    }
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                }
+                <li class="page-item @(CurrentPage == TotalPages ? "active" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(TotalPages)">@TotalPages</button>
+                </li>
+                <li class="page-item @(CurrentPage == TotalPages ? "disabled" : "")">
+                    <button class="page-link" disabled="@IsLastPage()" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}
+
+@code {
+    [Parameter] public int TotalPages { get; set; }
+    [Parameter] public int CurrentPage { get; set; }
+    [Parameter] public EventCallback<int> OnPageSelected { get; set; }
+
+    private bool IsFirstPage() => CurrentPage == 1;
+    private bool IsLastPage() => CurrentPage == TotalPages;
+
+    private async Task ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+            await OnPageSelected.InvokeAsync(CurrentPage);
+        }
+    }
+}

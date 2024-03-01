@@ -9,4 +9,5 @@ public interface IUserService
     Task<UserMetrics> GetUserMetricsByUserIdAsync(int userId);
     Task<UserMetrics> UpdateUserMetricsAsync(PostUserMetricsDto userMetrics, int userId);
     Task<User> GetUserByUsername(string username);
+    Task AddIngredientsToUserAsync(IEnumerable<Ingredient> ingredients, int userId);
 }

@@ -1,5 +1,7 @@
+using FoodSystemClient.Authentication;
 using FoodSystemClient.Components;
 using FoodSystemClient.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,14 +13,26 @@ builder.Services.AddRazorComponents()
 builder.Services.AddBootstrapBlazor();
 
 
-/* builder.Services.AddCascadingAuthenticationState();
+ builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
-builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>(); */
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<StorageService>();
+builder.Services.AddScoped<IIngredientService, IngredientService>();
+
+builder.Services.AddScoped<TokenProvider>();
+builder.Services.AddScoped<AuthenticationService>();
+
 builder.Services.AddHttpClient("FoodSystemAPI", client =>
 {
     client.BaseAddress = new Uri("http://localhost:5173/");
+});
+
+builder.Services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    options.Authority = "http://localhost:5173";
+    options.Audience = "FoodSystemAPI";
+    options.SaveToken = true;
 });
 
 var app = builder.Build();

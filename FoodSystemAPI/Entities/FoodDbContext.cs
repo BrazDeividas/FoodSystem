@@ -21,8 +21,6 @@ public partial class FoodDbContext : DbContext
 
     public virtual DbSet<Recipe> Recipes { get; set; }
 
-    public virtual DbSet<RecipeIngredient> RecipeIngredients { get; set; }
-
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserMetrics> UserMetrics { get; set; }
@@ -84,10 +82,21 @@ public partial class FoodDbContext : DbContext
             entity.Property(e => e.ViteMg).HasColumnName("vite_mg");
             entity.Property(e => e.ZincMg).HasColumnName("zinc_mg");
 
+
+            entity.HasMany(i => i.Recipes).WithMany(r => r.Ingredients)
+                .UsingEntity("RecipeIngredient",
+                l => l.HasOne(typeof(Recipe)).WithMany().HasForeignKey("RecipeId").HasPrincipalKey(nameof(Recipe.RecipeId)),
+                r => r.HasOne(typeof(Ingredient)).WithMany().HasForeignKey("IngredientId").HasPrincipalKey(nameof(Ingredient.IngredientId)),
+                j => j.HasKey("IngredientId", "RecipeId"));
             entity.HasOne(d => d.Category).WithMany(p => p.Ingredients)
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ingredient_category");
+            entity.HasMany(i => i.Users).WithMany(u => u.Ingredients)
+                .UsingEntity("UserIngredient",
+                l => l.HasOne(typeof(User)).WithMany().HasForeignKey("UserId").HasPrincipalKey(nameof(User.UserId)),
+                r => r.HasOne(typeof(Ingredient)).WithMany().HasForeignKey("IngredientId").HasPrincipalKey(nameof(Ingredient.IngredientId)),
+                j => j.HasKey("UserId", "IngredientId"));
         });
 
         modelBuilder.Entity<Recipe>(entity =>
@@ -119,31 +128,11 @@ public partial class FoodDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_recipe_user");
-        });
-
-        modelBuilder.Entity<RecipeIngredient>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("recipe_ingredient");
-
-            entity.Property(e => e.Amount).HasColumnName("amount");
-            entity.Property(e => e.AmountType)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("amount_type");
-            entity.Property(e => e.IngredientId).HasColumnName("ingredient_id");
-            entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
-
-            entity.HasOne(d => d.Ingredient).WithMany()
-                .HasForeignKey(d => d.IngredientId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_recipe_ingredient_ingredient");
-
-            entity.HasOne(d => d.Recipe).WithMany()
-                .HasForeignKey(d => d.RecipeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_recipe_ingredient_recipe");
+            entity.HasMany(r => r.Ingredients).WithMany(i => i.Recipes)
+                .UsingEntity("RecipeIngredient",
+                l => l.HasOne(typeof(Recipe)).WithMany().HasForeignKey("RecipeId").HasPrincipalKey(nameof(Recipe.RecipeId)),
+                r => r.HasOne(typeof(Ingredient)).WithMany().HasForeignKey("IngredientId").HasPrincipalKey(nameof(Ingredient.IngredientId)),
+                j => j.HasKey("RecipeId", "IngredientId"));
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -169,7 +158,14 @@ public partial class FoodDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("username");
+
+            entity.HasMany(u => u.Ingredients).WithMany(i => i.Users)
+                .UsingEntity("UserIngredient",
+                l => l.HasOne(typeof(User)).WithMany().HasForeignKey("UserId").HasPrincipalKey(nameof(User.UserId)),
+                r => r.HasOne(typeof(Ingredient)).WithMany().HasForeignKey("IngredientId").HasPrincipalKey(nameof(Ingredient.IngredientId)),
+                j => j.HasKey("UserId", "IngredientId"));
         });
+
 
         modelBuilder.Entity<UserMetrics>(entity =>
         {

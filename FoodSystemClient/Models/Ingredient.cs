@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
-
-namespace FoodSystemAPI.Entities;
+﻿namespace FoodSystemClient.Models;
 
 public partial class Ingredient
 {
@@ -64,11 +60,9 @@ public partial class Ingredient
 
     public double Vitd2Mcg { get; set; }
 
-    public virtual Category Category { get; set; } = null!;
-
-    [JsonIgnore]
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
-
-    [JsonIgnore]
-    public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
+    public string Category { get; set; } = null!;
+    
+    public bool Selected { get; set; } = false;
+    
+    public bool Owned { get; set; } = false;
 }

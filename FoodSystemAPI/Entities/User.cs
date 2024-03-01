@@ -19,8 +19,11 @@ public class User
 
     [JsonIgnore]
     public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
-
+    [JsonIgnore]
     public virtual UserMetrics UserMetrics { get; set; } = null!;
-    
+
+    [JsonIgnore]
+    public virtual ICollection<Ingredient> Ingredients { get; set; } = new List<Ingredient>();
+
     public virtual MealPlan MealPlan { get; set; } = null!;
 }

@@ -83,4 +83,22 @@ public class UserService : IUserService
     {
         return (await _userRepository.GetAll(x => x.Username == username)).FirstOrDefault();
     }
+
+    public async Task AddIngredientsToUserAsync(IEnumerable<Ingredient> ingredients, int userId)
+    {
+        var user = (await _userRepository.GetAllInclude(x => x.UserId == userId, x => x.Ingredients)).FirstOrDefault();
+        
+        if(user == null)
+        {
+            return;
+        }
+
+        foreach(var ingredient in ingredients)
+        {
+            user.Ingredients.Add(ingredient);
+        }
+
+        _userRepository.Update(user);
+        _userRepository.Save();
+    }
 }

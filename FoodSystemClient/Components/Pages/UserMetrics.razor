@@ -4,14 +4,25 @@
 @using System.Text.Json
 @inject IUserService userService
 @inject IJSRuntime jsRuntime
+@inject MessageService messageService
+@inject NavigationManager navigationManager
 @rendermode InteractiveServer
 
-<PageTitle>Adding User Metrics</PageTitle>
+<PageTitle>User Metrics</PageTitle>
+
+<h2>My User Metrics</h2>
 
 <ValidateForm Model="@Model" OnValidSubmit="@AddUserMetricsAsync">
     <EditorForm TModel="Models.UserMetrics">
         <Buttons>
-            <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-paper-plane" Text="Send" IsAsync="true" />
+            @if(metricsExist)
+            {
+                <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-save" Text="Update" IsAsync="true" />
+            }
+            else
+            {
+                <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-paper-plane" Text="Send" IsAsync="true" />
+            }
         </Buttons>
     </EditorForm>
 </ValidateForm>
@@ -28,12 +39,21 @@
 
     private bool isValid { get; set; } = true;
 
+    private bool metricsExist { get; set; } = false;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
+        Model = await userService.GetUserMetrics();
+
+        if(Model != null)
+        {
+            metricsExist = true;
+        }
+
         Model ??= new();
-        UserId = "";
+
         if (Model != null)
         {
             _ModelClone = JsonSerializer.Serialize(Model);
@@ -49,21 +69,28 @@
             return;
         }
 
-        int responseCode = await userService.PostUserMetrics(Model!, int.Parse(UserId));
-        if (responseCode == 200)
+        bool success = await userService.PostUserMetrics(Model!);
+        if(success)
         {
-            await jsRuntime.InvokeVoidAsync("alert", "User Metrics Added Successfully");
-            Reset();
-        }
-        else
-        {
-            await jsRuntime.InvokeVoidAsync("alert", "Server Error: User Metrics Not Added");
+            await ShowAlertAsync();
+            await Task.Delay(500);
+            navigationManager.NavigateTo("/");
         }
     }
 
     private void Reset()
     {
         Model = JsonSerializer.Deserialize<Models.UserMetrics>(_ModelClone!);
+    }
+
+    private async Task ShowAlertAsync()
+    {
+        await messageService.Show(new MessageOption()
+        {
+            Content = "User metrics successfully updated!",
+            Icon = "fa-solid fa-check-circle",
+            Color = Color.Success
+        });
     }
 
 }

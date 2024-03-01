@@ -1,98 +1,153 @@
 @page "/ingredients"
+@using FoodSystemClient.Components.Components
 @using FoodSystemClient.Wrappers
+@using FoodSystemClient.Models
+@using FoodSystemClient.Services
+@using FoodSystemClient.Authentication
+@using System.Diagnostics.CodeAnalysis
 @inject IHttpClientFactory ClientFactory
+@inject IIngredientService ingredientService
+@inject NavigationManager navigationManager
+@rendermode InteractiveServer
 
 <PageTitle>Ingredients</PageTitle>
 
-<h1>Ingredients</h1>
+<h2>Ingredients</h2>
 
-<p>Ingredients available:</p>
-
-@if (ingredients == null)
+@if (Items == null)
 {
-    <p><em>Loading...</em></p>
-}
-else if (getIngredientsError)
-{
-    <p><em>Couldn't load ingredients. Please try again.</em></p>
+    <p>Loading...</p>
 }
 else
 {
-    <table class="table">
+    <input type="text" id="searchInput" placeholder="Search..." @bind="Search" class="form-control mb-3" @onkeyup="OnEnterPress"/>
+    <Button IsAsync="true" OnClick="@AddToMyIngredientsAsync" ButtonStyle= "ButtonStyle.Round" LoadingIcon = "fa-solid fa-spin" > Add to My Ingredients </Button>
+    <table class="table table-striped">
         <thead>
             <tr>
-                <th>ID</th>
+                <th>
+                    <input type="checkbox" @bind="IsAllChecked" @onclick="SelectAll"/>
+                </th> <!-- Empty header for selection buttons -->
+                <th>Owned</th>
                 <th>Description</th>
-                <th>Amount per 100g</th>
-                <th>Calories</th>
-                <th>Fat, g</th>
-                <th>Saturated Fat, g</th>
-                <th>Sodium, mg</th>
-                <th>Total Carbohydrate, g</th>
-                <th>Sugars, g</th>
-                <th>Protein, g</th>
+                <th>Category</th>
+                <th>Energy (kcal)</th>
+                <th>Fat (g)</th>
+                <th>Of which Saturates (g)</th>
+                <th>Carbohydrate (g)</th>
+                <th>Of which Sugars (g)</th>
+                <th>Protein (g)</th>
+                <th>Salt (g)</th>
+                <th>Vitamin C (mg)</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var ingredient in ingredients)
+            @foreach (var ingredient in Items)
             {
                 <tr>
-                    <td>@ingredient.IngredientId</td>
+                    <td>
+                        <input type="checkbox" @bind="ingredient.Selected"/>
+                    </td>
+                    <td style="text-align: center; vertical-align: center;">
+                        @if(ingredient.Owned)
+                        {
+                            <i class="fas fa-check"></i>
+                        }
+                    </td>
                     <td>@ingredient.Description</td>
-                    <td></td>
-                    <td>@ingredient.EnergyKcal</td>
-                    <td>@ingredient.FatG</td>
-                    <td>@ingredient.SaturatedFatsG</td>
-                    <td>@ingredient.SodiumMg</td>
-                    <td>@ingredient.CarbG</td>
-                    <td>@ingredient.SugarG</td>
-                    <td>@ingredient.ProteinG</td>
+                    <td>@ingredient.Category</td>
+                    <td style="text-align: center; vertical-align: center;">@ingredient.EnergyKcal</td>
+                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.FatG, 2)</td>
+                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.SaturatedFatsG, 2)</td>
+                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.CarbG, 2)</td>
+                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.SugarG, 2)</td>
+                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.ProteinG, 2)</td>
+                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.SodiumMg / 1000, 2)</td>
+                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.VitcMg, 2)</td>
                 </tr>
             }
         </tbody>
     </table>
+    <CustomPagination TotalPages="TotalPages" CurrentPage="CurrentPage" OnPageSelected="@LoadIngredientsAsync"></CustomPagination>
 }
 
 @code {
-    private IEnumerable<Ingredient> ingredients = Array.Empty<Ingredient>();
-    private PagedResponse<Ingredient[]> responseIngredients;
-    private bool getIngredientsError;
+    [NotNull]
+    private List<Ingredient>? Items { get; set; } = new List<Ingredient>();
+    private List<Ingredient>? OwnedItems { get; set; } = new List<Ingredient>();
+    private PagedResponse<IEnumerable<Ingredient>> ResponseIngredients { get; set; }
+    private int TotalPages;
+    private int PageSize;
+    private int CurrentPage;
+    private string Search { get; set; } = null!;
+    private string PreviousSearch { get; set; } = null!;
+    private bool IsAllChecked { get; set; } = false;
+
     protected override async Task OnInitializedAsync()
     {
-        var client = ClientFactory.CreateClient("FoodSystemAPI");
-        var request = new HttpRequestMessage(HttpMethod.Get,
-            "api/ingredient");
-        request.Headers.Add("Accept", "application/json");
+        await base.OnInitializedAsync();
 
-        try
-        {
-            var response = await client.SendAsync(request);
+        ResponseIngredients = await ingredientService.GetIngredientsByPage(1, 10, Search);
+        await LoadOwnedIngredientsAsync();
+        LoadDataFromResponse();
+    }
 
-            if(response.IsSuccessStatusCode)
-            {
-                responseIngredients = await response.Content.ReadFromJsonAsync<PagedResponse<Ingredient[]>>();
-                ingredients = responseIngredients.Data;
-            }
-            else
-            {
-                getIngredientsError = true;
-            }
-        }
-        catch (HttpRequestException)
+    private async Task LoadIngredientsAsync(int page)
+    {
+        CurrentPage = page;
+        ResponseIngredients = await ingredientService.GetIngredientsByPage(CurrentPage, PageSize, Search);
+        LoadDataFromResponse();
+    }
+
+    private async Task LoadOwnedIngredientsAsync()
+    {
+        var response = await ingredientService.GetOwnedIngredients();
+        OwnedItems = response.Data.ToList();
+    }
+
+    private async Task AddToMyIngredientsAsync()
+    {
+        var ingredientIds = Items.Where(x => x.Selected).Select(x => x.IngredientId).ToList();
+        await ingredientService.AddIngredientsToUser(ingredientIds);
+        await LoadOwnedIngredientsAsync();  
+        StateHasChanged();
+    }
+
+    private async void LoadDataFromResponse()
+    {
+        if (ResponseIngredients != null && ResponseIngredients.Data != null)
         {
-            getIngredientsError = true;
+            TotalPages = ResponseIngredients.TotalPages;
+            PageSize = ResponseIngredients.PageSize;
+            CurrentPage = ResponseIngredients.PageNumber;
+            Items = ResponseIngredients.Data.ToList();
+            Items.ForEach(x => x.Owned = (
+                OwnedItems!.Any(owned => owned.IngredientId == x.IngredientId)
+                ? true
+                : false
+            ));
+            IsAllChecked = false;
         }
     }
-    private class Ingredient
+
+    private void SelectAll()
     {
-        public int IngredientId { get; set; }
-        public string Description { get; set; }
-        public int EnergyKcal { get; set; }
-        public double ProteinG { get; set; }
-        public double SaturatedFatsG { get; set; }
-        public double FatG { get; set; }
-        public double CarbG { get; set; }
-        public double SugarG { get; set; }
-        public double SodiumMg { get; set; }
+        IsAllChecked = !IsAllChecked;
+        var selectAll = Items.All(x => x.Selected);
+        foreach (var ingredient in Items)
+        {
+            ingredient.Selected = IsAllChecked;
+        }
+    }
+
+    private async Task OnEnterPress(KeyboardEventArgs e)
+    {
+        if(e.Key == "Enter")
+            if(!string.Equals(Search, PreviousSearch)) 
+            {
+                ResponseIngredients = await ingredientService.GetIngredientsByPage(1, 10, Search);
+                LoadDataFromResponse();
+                PreviousSearch = Search;
+            }
     }
 }

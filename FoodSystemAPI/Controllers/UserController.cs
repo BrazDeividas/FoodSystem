@@ -71,7 +71,7 @@ public class UserController : ControllerBase
     {
         ClaimsPrincipal claimsPrincipal = HttpContext.User;
         var username = claimsPrincipal.FindFirst(ClaimTypes.Name);
-
+        
         if(username == null)
         {
             return NotFound();

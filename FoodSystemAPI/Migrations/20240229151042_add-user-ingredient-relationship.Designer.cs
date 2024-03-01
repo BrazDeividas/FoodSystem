@@ -4,6 +4,7 @@ using FoodSystemAPI.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FoodSystemAPI.Migrations
 {
     [DbContext(typeof(FoodDbContext))]
-    partial class FoodDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240229151042_add-user-ingredient-relationship")]
+    partial class adduseringredientrelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -115,6 +118,9 @@ namespace FoodSystemAPI.Migrations
                         .HasColumnType("float")
                         .HasColumnName("protein_g");
 
+                    b.Property<int?>("RecipeId")
+                        .HasColumnType("int");
+
                     b.Property<double>("RiboflavinMg")
                         .HasColumnType("float")
                         .HasColumnName("riboflavin_mg");
@@ -170,6 +176,8 @@ namespace FoodSystemAPI.Migrations
                     b.HasKey("IngredientId");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("RecipeId");
 
                     b.ToTable("ingredient", (string)null);
                 });
@@ -283,6 +291,34 @@ namespace FoodSystemAPI.Migrations
                     b.ToTable("recipe", (string)null);
                 });
 
+            modelBuilder.Entity("FoodSystemAPI.Entities.RecipeIngredient", b =>
+                {
+                    b.Property<int>("Amount")
+                        .HasColumnType("int")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("AmountType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("amount_type");
+
+                    b.Property<int>("IngredientId")
+                        .HasColumnType("int")
+                        .HasColumnName("ingredient_id");
+
+                    b.Property<int>("RecipeId")
+                        .HasColumnType("int")
+                        .HasColumnName("recipe_id");
+
+                    b.HasIndex("IngredientId");
+
+                    b.HasIndex("RecipeId");
+
+                    b.ToTable("recipe_ingredient", (string)null);
+                });
+
             modelBuilder.Entity("FoodSystemAPI.Entities.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -369,21 +405,6 @@ namespace FoodSystemAPI.Migrations
                     b.ToTable("user_metrics", (string)null);
                 });
 
-            modelBuilder.Entity("RecipeIngredient", b =>
-                {
-                    b.Property<int>("RecipeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("IngredientId")
-                        .HasColumnType("int");
-
-                    b.HasKey("RecipeId", "IngredientId");
-
-                    b.HasIndex("IngredientId");
-
-                    b.ToTable("RecipeIngredient");
-                });
-
             modelBuilder.Entity("UserIngredient", b =>
                 {
                     b.Property<int>("UserId")
@@ -406,6 +427,10 @@ namespace FoodSystemAPI.Migrations
                         .HasForeignKey("CategoryId")
                         .IsRequired()
                         .HasConstraintName("FK_ingredient_category");
+
+                    b.HasOne("FoodSystemAPI.Entities.Recipe", null)
+                        .WithMany("Ingredients")
+                        .HasForeignKey("RecipeId");
 
                     b.Navigation("Category");
                 });
@@ -451,6 +476,25 @@ namespace FoodSystemAPI.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FoodSystemAPI.Entities.RecipeIngredient", b =>
+                {
+                    b.HasOne("FoodSystemAPI.Entities.Ingredient", "Ingredient")
+                        .WithMany()
+                        .HasForeignKey("IngredientId")
+                        .IsRequired()
+                        .HasConstraintName("FK_recipe_ingredient_ingredient");
+
+                    b.HasOne("FoodSystemAPI.Entities.Recipe", "Recipe")
+                        .WithMany()
+                        .HasForeignKey("RecipeId")
+                        .IsRequired()
+                        .HasConstraintName("FK_recipe_ingredient_recipe");
+
+                    b.Navigation("Ingredient");
+
+                    b.Navigation("Recipe");
+                });
+
             modelBuilder.Entity("FoodSystemAPI.Entities.UserMetrics", b =>
                 {
                     b.HasOne("FoodSystemAPI.Entities.User", "User")
@@ -460,21 +504,6 @@ namespace FoodSystemAPI.Migrations
                         .HasConstraintName("FK_user_metrics_user");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("RecipeIngredient", b =>
-                {
-                    b.HasOne("FoodSystemAPI.Entities.Ingredient", null)
-                        .WithMany()
-                        .HasForeignKey("IngredientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("FoodSystemAPI.Entities.Recipe", null)
-                        .WithMany()
-                        .HasForeignKey("RecipeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("UserIngredient", b =>
@@ -504,6 +533,8 @@ namespace FoodSystemAPI.Migrations
 
             modelBuilder.Entity("FoodSystemAPI.Entities.Recipe", b =>
                 {
+                    b.Navigation("Ingredients");
+
                     b.Navigation("MealPlanItem")
                         .IsRequired();
                 });

@@ -6,6 +6,6 @@ namespace FoodSystemClient.Services;
 public interface IUserService
 {
     Task<ClaimsPrincipal> LoginAsync(string username);
-    Task<UserMetrics> GetUserMetrics(int userId);
-    Task<int> PostUserMetrics(UserMetrics userMetrics, int userId);
+    Task<UserMetrics> GetUserMetrics();
+    Task<bool> PostUserMetrics(UserMetrics userMetrics);
 }

@@ -1,23 +1,34 @@
 ﻿@inherits LayoutComponentBase
 @using FoodSystemClient.Services
+@using FoodSystemClient.Authentication
+@using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationService AuthenticationService
+@inject IJSRuntime JSRuntime
 
     <BootstrapBlazorRoot>
         <div>
             <Layout IsPage="true">
                 <Header>
-                    <div class="d-flex justify-content-start align-items-center header">Meal Planner</div>
+                    <div class="d-flex justify-content-start align-items-center header">
+                        <div style=" font-family: Arial, sans-serif;
+    font-size: 32px;
+    color: #007bff;">
+                            Meal<span style="font-weight: bold;
+    color: #28a745;">Gen</span>
+                        </div>
+                    </div>
                 </Header>
                 <Side>
                     <div style="border-right: 1px solid rgba(0, 0, 0, 0.125); padding: 6px 0;">
-                        <Menu Items="@LoggedInStateSideMenuItems" IsVertical="true"/>
-                        @* <AuthorizeView>
-                            <Authorized> *@
-                            @* </Authorized>
+                        <AuthorizeView>
+                            <Authorized>
+                                <Menu Items="@LoggedInStateSideMenuItems" IsVertical="true"/>
+                            </Authorized>
                             <NotAuthorized>
-                                <Menu Items="@LoggedOutStateMenuItems" />
+                                <Menu Items="@LoggedOutStateMenuItems" IsVertical="true"/>
                             </NotAuthorized>
-                        </AuthorizeView> *@
+                        </AuthorizeView>
                     </div>
                 </Side>
                 <Main>
@@ -82,15 +93,24 @@
 
         LoggedOutStateMenuItems = new List<MenuItem>
         {
+            new MenuItem() { Text = "Home", Icon = "fa-solid fa-home", Url = "/"},
             new MenuItem() { Text = "Login", Icon = "fa-solid fa-right-to-bracket", Url = "/login"}
         };
 
         LoggedInStateSideMenuItems = new List<MenuItem>
         {
+            new MenuItem() { Text = "Home", Icon = "fa-solid fa-home", Url = "/"},
             new MenuItem() { Text = "User Metrics", Icon = "fa-solid fa-circle-info", Url = "/user-metrics"},
             new MenuItem() { Text = "Meal Plan", Icon = "fa-solid fa-tasks", Url = "/meal-plans"},
             new MenuItem() { Text = "Recipes", Icon = "fa-solid fa-book", Url = "/recipes" },
             new MenuItem() { Text = "Ingredients", Icon = "fa-solid fa-layer-group", Url = "/ingredients"}
         };
+
+@*         var currentUser = AuthenticationService.CurrentUser;
+        if(currentUser.Identity != null && !currentUser.Identity.IsAuthenticated)
+        {
+            var user = await JSRuntime.InvokeAsync<ClaimsPrincipal>("localStorage.getItem", ["claimsPrincipal"]);
+            AuthenticationService.CurrentUser = user; 
+        } *@
     }
 }

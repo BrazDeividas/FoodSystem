@@ -1,21 +1,26 @@
 @page "/login"
 @using FoodSystemClient.Services
-@using Microsoft.AspNetCore.Http
+@using FoodSystemClient.Authentication
 @inject IUserService userService
-@inject StorageService storageService
+@inject AuthenticationService authenticationService
+@inject TokenProvider tokenProvider
+@inject NavigationManager navigationManager
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Login</PageTitle>
 
 <h3>User Login</h3>
 
-<BootstrapInputGroup>
-    <BootstrapInput @bind-Value="@username" Placeholder="Username" />
-        <Button ButtonType="ButtonType.Submit" Text="Login" IsAsync="true"></Button>
-</BootstrapInputGroup>
+<form @onsubmit="LoginAsync">
+    <BootstrapInputGroup>
+        <BootstrapInput @bind-Value="@username" Placeholder="Username" />
+            <Button ButtonType="ButtonType.Submit" Text="Login" IsAsync="true"></Button>
+    </BootstrapInputGroup>
+</form>
 
 @code {
-    private string username { get; set; } = "";
+    private string username { get; set; } = string.Empty;
 
     private async void LoginAsync()
     {
@@ -27,7 +32,9 @@
         var userPrincipal = await userService.LoginAsync(username);
         if(userPrincipal != null)
         {
-            await storageService.StoreClaimsPrincipal(userPrincipal);
+            authenticationService.CurrentUser = userPrincipal;
+            //await JSRuntime.InvokeVoidAsync("localStorage.setItem", "claimsPrincipal", userPrincipal); need to fix
+            navigationManager.NavigateTo("/");
         }
     }
 }

@@ -2,13 +2,14 @@ using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Repositories;
 using FoodSystemAPI.Wrappers;
+using Microsoft.EntityFrameworkCore;
 
 namespace FoodSystemAPI.Services;
 
 public class MealPlanService : IMealPlanService
 {
     private readonly IRepository<MealPlan> _mealPlanRepository;
-
+    
     private readonly HttpClient _internalApiClient;
 
     private readonly IRecipeService _recipeService;
@@ -20,17 +21,25 @@ public class MealPlanService : IMealPlanService
         _recipeService = recipeService;
     }
 
-    public async Task<MealPlan> PlanMealAsync(UserMetrics userMetrics, int numberOfMeals)
+    public async Task<MealPlan> GetCurrentMealPlanAsync(int userId)
     {
-        var mealPlan = await _mealPlanRepository.GetAll(x => x.UserId == userMetrics.UserId && x.EndDate > DateTime.Now);
-        if (mealPlan.Any())
-        {
-            return mealPlan.First();
-        }
+        var mealPlan = _mealPlanRepository.IncludeMultipleQueryable(
+            _mealPlanRepository.GetAllQueryable(x => x.UserId == userId && x.StartDate <= DateTime.Now && x.EndDate >= DateTime.Now),
+            x => x.MealPlanItems
+        );
+        var mealPlanFirst = await mealPlan.FirstOrDefaultAsync();
+        var recipes = await _recipeService.GetSavedRecipesAsync(x => mealPlanFirst.MealPlanItems.Select(i => i.RecipeId).Contains(x.RecipeId));
+        mealPlanFirst.MealPlanItems.ToList().ForEach(x => x.Recipe = x.Recipe ?? recipes.FirstOrDefault(r => r.RecipeId == x.RecipeId));
+        return mealPlanFirst;
+    }
 
+    public async Task<MealPlan> PlanMealAsync(UserMetrics userMetrics, int numberOfMeals, DateTime startDate, DateTime endDate)
+    {
         var neededCalories = CalculateCaloricNeeds(userMetrics);
 
-        var response = await _internalApiClient.GetFromJsonAsync<Response<IEnumerable<ReceiveServerRecipeDto>>>($"api/Recipe/byFilter?calorieSum={(int)neededCalories}&numberOfMeals={numberOfMeals}");
+        var days = (int)double.Ceiling((endDate - startDate).TotalDays);
+
+        var response = await _internalApiClient.GetFromJsonAsync<Response<IEnumerable<ReceiveServerRecipeDto>>>($"api/Recipe/byFilter?calorieSum={(int)neededCalories}&numberOfMeals={numberOfMeals}&days={days}");
 
         if (response.Data.Count() < numberOfMeals) //TODO: fetch more recipes later
         {

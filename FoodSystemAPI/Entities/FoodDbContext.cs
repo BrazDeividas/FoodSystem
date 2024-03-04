@@ -30,7 +30,12 @@ public partial class FoodDbContext : DbContext
     public virtual DbSet<MealPlanItem> MealPlanItems { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Name=ConnectionStrings:SqlServer");
+    {
+        if(!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlServer("Name=ConnectionStrings:SqlServer");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

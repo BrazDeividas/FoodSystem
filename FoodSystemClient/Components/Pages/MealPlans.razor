@@ -1,5 +1,118 @@
 @page "/meal-plans"
+@using FoodSystemClient.Models
+@using FoodSystemClient.Services
+@using FoodSystemClient.Wrappers
+@using System.ComponentModel.DataAnnotations;
+@inject IMealPlanService MealPlanService
+@inject MessageService messageService
 
 <PageTitle>Meal Plans</PageTitle>
 
-<h2>Meal Plan</h2>
+@if(Loading)
+{
+    <SkeletonParagraph />
+}
+else if(CurrentMealPlan == null)
+{
+    <h2>Generate Your Meal Plan</h2>
+
+    <ValidateForm Model="@MealPlanForm" OnValidSubmit="@GenerateAsync"> 
+        <EditorForm TModel="MealPlanFormModel"></EditorForm>
+        <Buttons>
+            <Button ButtonType="ButtonType.Submit" Color="Color.Primary" Icon="fa-solid fa-paper-plane" IsAsync="true">Generate</Button>
+        </Buttons>    
+    </ValidateForm>
+}
+else
+{
+    <div class="row">
+        <div class="col-10">
+            <h3>Your Meal Plan For Today</h3>
+        </div>
+        <div class="col-2">
+            <h5>
+                <small class="text-muted">@DateTime.Now.ToShortDateString()</small>
+                <small class="text-muted">Total Calories: </small><small>@CurrentMealPlan.TotalCalories</small>
+            </h5>
+        </div>
+    </div>
+    @foreach (var item in CurrentMealPlan.MealPlanItems)
+    {
+    <Card Color="Color.Dark">
+        <BodyTemplate>
+            <h4>@item.Recipe.Title</h4>
+            @foreach(var ingredient in item.Recipe.Ingredients)
+            {
+                <p class="card-text">@ingredient</p>
+            }
+            <p class="card-text">@item.Recipe.Instructions</p>
+            <div class="container" style="height: 150px; width: auto; max-width: 250px">
+                    <ImageViewer Url="@item.Recipe.ImageUrl.ToString()" ShowPlaceHolder="true"></ImageViewer>
+            </div>
+        </BodyTemplate>
+    </Card>
+    }
+}
+
+
+
+@code {
+    private MealPlanFormModel MealPlanForm { get; set; } = new MealPlanFormModel();
+    private MealPlan CurrentMealPlan { get; set; }
+    private Response<MealPlan> ResponseMealPlan { get; set;}
+    private bool Loading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ResponseMealPlan = await MealPlanService.GetCurrentMealPlanAsync();
+        if(ResponseMealPlan.Succeeded && ResponseMealPlan.Data != null)
+        {
+            CurrentMealPlan = ResponseMealPlan.Data;
+        }
+
+        await base.OnInitializedAsync();
+        Loading = false;
+    }
+
+    private async Task GenerateAsync(EditContext context)
+    {
+        if (!context.Validate()) return;
+
+        if(MealPlanForm.StartDate > MealPlanForm.EndDate)
+        {
+            await messageService.Show(new MessageOption()
+            {
+                Content = "Start date must be before end date",
+                Icon = "fa-solid fa-exclamation-circle",
+                Color = Color.Danger
+            });
+            return;
+        }
+
+        ResponseMealPlan = await MealPlanService.GenerateMealPlanAsync(MealPlanForm.NumberOfMeals, MealPlanForm.StartDate, MealPlanForm.StartDate);
+        if (ResponseMealPlan.Succeeded && ResponseMealPlan.Data != null)
+        {
+            await messageService.Show(new MessageOption()
+            {
+                Content = "Meal Plan generated successfully!",
+                Icon = "fa-solid fa-check-circle",
+                Color = Color.Success
+            });
+            CurrentMealPlan = ResponseMealPlan.Data;
+        }
+    }
+
+
+    private class MealPlanFormModel
+    {
+        [Required]
+        [Range(1, 6, ErrorMessage = "Number of meals must be between 1 and 6")]
+        public int NumberOfMeals { get; set; }
+
+        [Required]
+        public DateTime StartDate { get; set; }
+        
+        [Required]
+        public DateTime EndDate { get; set; }
+    }
+}

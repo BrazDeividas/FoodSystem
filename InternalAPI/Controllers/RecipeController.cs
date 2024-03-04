@@ -35,7 +35,7 @@ public class RecipeController : ControllerBase
         return Ok(new Response<IEnumerable<Recipe>>(entities));
     }
 
-    [OutputCache(VaryByQueryKeys = ["search", "caloriesum", "numberofmeals"])]
+    [OutputCache(VaryByQueryKeys = ["search", "caloriesum", "numberofmeals", "days"])]
     [HttpGet("byFilter")]
     public async Task<IActionResult> GetRecipesByFilter([FromQuery] SearchFilter searchFilter)
     {

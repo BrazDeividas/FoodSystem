@@ -1,0 +1,89 @@
+@* @page "/meal-plans"
+@using FoodSystemClient.Models
+
+<PageTitle>Meal Plans</PageTitle>
+
+<h2>What's Today's Plan?</h2>
+
+<div class="container">
+    <ul class="mx-auto my-5"
+        ondragover="event.preventDefault();">
+        @foreach (var item in Models.OrderBy(x => x.Order))
+        {
+                <li @key="item" class="pb-2 relative w-64"
+                    @ondragstart="() => draggingModel = item"
+                    @ondragend="() => draggingModel = null" draggable="@(item == lastModel ? "false" : "true")"
+                    >
+
+                    @if (item == lastModel)
+                    {
+                        if (draggingModel is not null)
+                        {
+                            <div @ondrop="() => HandleDrop(item)" @key="item" class="h-10 bg-transparent w-full 
+                                @(item.IsDragOver ? "border-t-4 border-red-500" : "")">
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class=" bg-sky-800 py-3 rounded-xl px-2">
+                            <div class="bg-indigo-800 py-5 mx-2 px-2 rounded-xl">@item.Recipe.Title</div>
+                        </div>
+                    }
+
+                    @if (draggingModel is not null)
+                    {
+                        <div class="bg-neutral-500/20 absolute inset-0 w-full h-full @(item.IsDragOver ? "border-t-4 border-red-500" : "")"
+                            @ondrop="() => HandleDrop(item)"
+                            @ondragenter="@(() => { item.IsDragOver = true; System.Console.WriteLine($"Drag Enter {item.Recipe.Title}"); })"
+                            @ondragleave="@(() => { item.IsDragOver = false; System.Console.WriteLine($"Drag Leave {item.Recipe.Title}"); })">
+                        </div>
+                    }
+                </li>
+        }
+    </ul>
+</div>
+
+@code {
+
+    private List<Model> Models { get; set; } = new List<Model>();
+
+    private class Model
+    {
+        public int Order { get; set; }
+        public Recipe Recipe { get; set; }
+        public bool IsDragOver { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        Models.Add(new Model { Order = 0, Recipe = new Recipe { Title = "Pasta" } });
+        Models.Add(new Model { Order = 1, Recipe = new Recipe { Title = "Elamino" } });
+        Models.Add(new Model { Order = 2, Recipe = new Recipe { Title = "Terabino" } });
+    }
+
+    private void HandleDrop(Model landingModel)
+    {
+        if (draggingModel == null) return;
+
+        int originalOrderLanding = landingModel.Order;
+
+        Models.Where(x => x.Order >= landingModel.Order).ToList().ForEach(x => x.Order++);
+        draggingModel.Order = originalOrderLanding;
+
+        int ii = 0;
+        foreach (var model in Models.OrderBy(x => x.Order).ToList())
+        {
+            model.Order = ii++;
+            model.IsDragOver = false;
+        }
+        lastModel.Order = int.MaxValue - 1;
+        StateHasChanged();
+    }
+
+    private Model? draggingModel;
+
+    readonly Model lastModel = new() { Order = int.MaxValue - 1 };
+} *@

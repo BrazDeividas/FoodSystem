@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AutoMapper;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.DTOs.Tasty;
@@ -29,6 +30,11 @@ public class RecipeService : IRecipeService
         _ingredientService = ingredientService;
         _recipeRepository = recipeRepository;
         _recipeIngredientRepository = recipeIngredientRepository;
+    }
+
+    public async Task<IEnumerable<Recipe>> GetSavedRecipesAsync(Expression<Func<Recipe, bool>> expression)
+    {
+        return await _recipeRepository.GetAll(expression);
     }
 
     public async Task<IEnumerable<ReceiveServerRecipeDto>> GetRecipesAsync(string searchQuery, PaginationFilter paginationFilter)

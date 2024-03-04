@@ -81,8 +81,12 @@ public class RecipeService : IRecipeService
         : x => x.Title.Contains(searchFilter.Search)
         : x => int.Abs(x.Calories - (searchFilter.CalorieSum / searchFilter.NumberOfMeals)) <= 150;
 
+
+        
+        Random rng = new Random();
         var entities = await GetAll(filter);
-        return entities.Take(searchFilter.NumberOfMeals);
+        var shuffledEntities = entities.OrderBy(x => rng.Next()).ToList();
+        return shuffledEntities.Take(searchFilter.NumberOfMeals * searchFilter.Days);
     }
 
     public async Task<IEnumerable<Recipe>> GetAll()

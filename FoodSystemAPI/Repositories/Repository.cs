@@ -41,6 +41,11 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.Where(expression).ToListAsync();
     }
 
+    public IQueryable<T> GetAllQueryable(Expression<Func<T, bool>> expression)
+    {
+        return _dbSet.Where(expression);
+    }
+
     public async Task<IEnumerable<T>> GetAllInclude(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes)
     {
         var query = _dbSet.Where(expression);
@@ -49,6 +54,15 @@ public class Repository<T> : IRepository<T> where T : class
             query = query.Include(include);
         }
         return await query.ToListAsync();
+    }
+
+    public IQueryable<T> IncludeMultipleQueryable(IQueryable<T> query, params Expression<Func<T, object>>[] includes)
+    {
+        if(includes != null)
+        {
+            query = includes.Aggregate(query, (current, include) => current.Include(include));
+        }
+        return query;
     }
 
     public async Task<T> GetById(int id)

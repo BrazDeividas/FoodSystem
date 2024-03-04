@@ -62,12 +62,7 @@
 
     private async Task AddUserMetricsAsync(EditContext context)
     {
-        isValid = context.Validate();
-
-        if (!isValid)
-        {
-            return;
-        }
+        if (!context.Validate()) return;
 
         bool success = await userService.PostUserMetrics(Model!);
         if(success)

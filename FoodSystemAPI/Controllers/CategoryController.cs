@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FoodSystemAPI.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class CategoryController : ControllerBase

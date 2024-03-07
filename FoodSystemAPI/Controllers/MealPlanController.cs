@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Services;
 using FoodSystemAPI.Wrappers;
@@ -45,7 +46,7 @@ public class MealPlanController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> PlanMealAsync([FromQuery] DateTime StartDate, [FromQuery] DateTime EndDate, [FromQuery] int NumberOfMeals)
+    public async Task<IActionResult> PlanMealAsync([FromBody] MealPlanOptions mealPlanOptions)
     {
         ClaimsPrincipal claimsPrincipal = HttpContext.User;
         var username = claimsPrincipal.FindFirst(ClaimTypes.Name);
@@ -65,7 +66,7 @@ public class MealPlanController : ControllerBase
             return Ok(new Response<MealPlan>{ Succeeded = false, Message = "User metrics not found" });
         }
 
-        var mealPlan = await _mealPlanService.PlanMealAsync(userMetrics, NumberOfMeals, StartDate, EndDate);
+        var mealPlan = await _mealPlanService.PlanMealAsync(userMetrics, mealPlanOptions.NumberOfMeals, mealPlanOptions.StartDate, mealPlanOptions.EndDate);
         if (mealPlan == null)
         {
             return Ok(new Response<MealPlan>{ Succeeded = false, Message = "Meal plan cannot be formed" });

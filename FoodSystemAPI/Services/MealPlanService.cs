@@ -21,13 +21,18 @@ public class MealPlanService : IMealPlanService
         _recipeService = recipeService;
     }
 
-    public async Task<MealPlan> GetCurrentMealPlanAsync(int userId)
+    public async Task<MealPlan?> GetCurrentMealPlanAsync(int userId)
     {
         var mealPlan = _mealPlanRepository.IncludeMultipleQueryable(
             _mealPlanRepository.GetAllQueryable(x => x.UserId == userId && x.StartDate <= DateTime.Now && x.EndDate >= DateTime.Now),
             x => x.MealPlanItems
         );
         var mealPlanFirst = await mealPlan.FirstOrDefaultAsync();
+        if(mealPlanFirst == null)
+        {
+            return null;
+        }
+        
         var recipes = await _recipeService.GetSavedRecipesAsync(x => mealPlanFirst.MealPlanItems.Select(i => i.RecipeId).Contains(x.RecipeId));
         mealPlanFirst.MealPlanItems.ToList().ForEach(x => x.Recipe = x.Recipe ?? recipes.FirstOrDefault(r => r.RecipeId == x.RecipeId));
         return mealPlanFirst;
@@ -84,6 +89,7 @@ public class MealPlanService : IMealPlanService
             UserMetrics.ActivityLevelType.ModeratelyActive => 1.55,
             UserMetrics.ActivityLevelType.VeryActive => 1.725,
             UserMetrics.ActivityLevelType.ExtraActive => 1.9,
+            _ => 1.2
         };
     }
 }

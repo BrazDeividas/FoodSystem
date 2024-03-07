@@ -5,6 +5,7 @@
 @using System.ComponentModel.DataAnnotations;
 @inject IMealPlanService MealPlanService
 @inject MessageService messageService
+@inject NavigationManager navigationManager
 
 <PageTitle>Meal Plans</PageTitle>
 
@@ -17,10 +18,17 @@ else if(CurrentMealPlan == null)
     <h2>Generate Your Meal Plan</h2>
 
     <ValidateForm Model="@MealPlanForm" OnValidSubmit="@GenerateAsync"> 
-        <EditorForm TModel="MealPlanFormModel"></EditorForm>
-        <Buttons>
-            <Button ButtonType="ButtonType.Submit" Color="Color.Primary" Icon="fa-solid fa-paper-plane" IsAsync="true">Generate</Button>
-        </Buttons>    
+        <div class="row">
+            <div class="col-md-6">
+                <label>Number of Meals</label>
+                <BootstrapInputNumber @bind-Value="MealPlanForm.NumberOfMeals" Min="1" Max="6" ShowLabel="false"></BootstrapInputNumber>
+            </div>
+            <div class="col-md-6">
+                <label>Plan Duration</label>
+                <DateTimeRange @bind-Value="MealPlanForm.DateRangeValue" MinValue="DateTime.Today" ShowSidebar="true" ViewMode="DatePickerViewMode.Date" IsEditable="true" ShowLabel="false" DateFormat="yyyy/MM/dd" />
+            </div>
+        </div>
+        <Button ButtonType="ButtonType.Submit" Color="Color.Primary" Icon="fa-solid fa-paper-plane" Text="Generate" IsAsync="true" />
     </ValidateForm>
 }
 else
@@ -78,7 +86,9 @@ else
     {
         if (!context.Validate()) return;
 
-        if(MealPlanForm.StartDate > MealPlanForm.EndDate)
+        //validate date range
+
+        if(MealPlanForm.DateRangeValue.Start > MealPlanForm.DateRangeValue.End)
         {
             await messageService.Show(new MessageOption()
             {
@@ -89,7 +99,7 @@ else
             return;
         }
 
-        ResponseMealPlan = await MealPlanService.GenerateMealPlanAsync(MealPlanForm.NumberOfMeals, MealPlanForm.StartDate, MealPlanForm.StartDate);
+        ResponseMealPlan = await MealPlanService.GenerateMealPlanAsync(MealPlanForm.NumberOfMeals, MealPlanForm.DateRangeValue.Start, MealPlanForm.DateRangeValue.End);
         if (ResponseMealPlan.Succeeded && ResponseMealPlan.Data != null)
         {
             await messageService.Show(new MessageOption()
@@ -100,8 +110,8 @@ else
             });
             CurrentMealPlan = ResponseMealPlan.Data;
         }
+        navigationManager.Refresh(false);
     }
-
 
     private class MealPlanFormModel
     {
@@ -110,9 +120,6 @@ else
         public int NumberOfMeals { get; set; }
 
         [Required]
-        public DateTime StartDate { get; set; }
-        
-        [Required]
-        public DateTime EndDate { get; set; }
+        public DateTimeRangeValue DateRangeValue { get; set; } = new DateTimeRangeValue();
     }
 }

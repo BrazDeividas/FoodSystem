@@ -25,17 +25,10 @@ public class UserService : IUserService
         var response = await _httpClient.PostAsJsonAsync("api/User/login", new { Username = username });
         if(response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<ResponseLoginDto>().ContinueWith(task =>
+            return await response.Content.ReadAsStringAsync().ContinueWith(task =>
             {
-                _tokenProvider.AccessToken = task.Result!.accessToken;
-                _tokenProvider.RefreshToken = task.Result!.refreshToken;
-                _tokenProvider.ExpiresIn = task.Result!.expiresIn;
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, username),
-                    new Claim("AccessToken", task.Result!.accessToken)
-                };
-                var identity = new ClaimsIdentity(claims, "Bearer");
+                _tokenProvider.AccessToken = task.Result;
+                var identity = new ClaimsIdentity(JwtParser.ParseClaimsFromJwt(_tokenProvider.AccessToken), "jwt");
                 var principal = new ClaimsPrincipal(identity);
                 return principal;
             });

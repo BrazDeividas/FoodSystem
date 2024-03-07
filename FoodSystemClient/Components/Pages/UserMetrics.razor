@@ -2,10 +2,12 @@
 @using FoodSystemClient.Services
 @using FoodSystemClient.DTOs
 @using System.Text.Json
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IUserService userService
 @inject IJSRuntime jsRuntime
 @inject MessageService messageService
 @inject NavigationManager navigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 
 <PageTitle>User Metrics</PageTitle>
@@ -30,7 +32,7 @@
 @code {
     [SupplyParameterFromForm]
     private Models.UserMetrics? Model { get; set;}
-    
+
     private List<string> SexValues = ["Male", "Female"];
 
     private string? _ModelClone;
@@ -44,6 +46,8 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+
+        await AuthenticationStateProvider.GetAuthenticationStateAsync();
 
         Model = await userService.GetUserMetrics();
 

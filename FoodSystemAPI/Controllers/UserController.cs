@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Services;
@@ -7,6 +9,7 @@ using FoodSystemAPI.Wrappers;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace FoodSystemAPI.Controllers;
 
@@ -16,10 +19,12 @@ namespace FoodSystemAPI.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IConfiguration _configuration;
 
-    public UserController(IUserService userService)
+    public UserController(IUserService userService, IConfiguration configuration)
     {
         _userService = userService;
+        _configuration = configuration;
     }
 
     [AllowAnonymous]
@@ -36,14 +41,23 @@ public class UserController : ControllerBase
         if(user == null)
         {
             return NotFound();
-        }
+        } 
 
-        var claimsPrincipal = new ClaimsPrincipal(
-            new ClaimsIdentity(
-                [new Claim(ClaimTypes.Name, loginDto.username)], 
-                BearerTokenDefaults.AuthenticationScheme));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        var claims = new []
+        {
+            new Claim(ClaimTypes.Name, user.Username)
+        };
+        var token = new JwtSecurityToken(_configuration["Jwt:Issuer"],
+        _configuration["Jwt:Audience"],
+        claims,
+        expires: DateTime.Now.AddMinutes(15),
+        signingCredentials: credentials);
 
-        return SignIn(claimsPrincipal);
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+        return Ok(tokenString);
     }
 
     [HttpGet("metrics")]

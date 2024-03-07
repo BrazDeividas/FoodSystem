@@ -1,10 +1,9 @@
 ﻿@inherits LayoutComponentBase
+@using Blazored.SessionStorage
 @using FoodSystemClient.Services
 @using FoodSystemClient.Authentication
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
-@inject AuthenticationService AuthenticationService
-@inject IJSRuntime JSRuntime
 
     <BootstrapBlazorRoot>
         <div>
@@ -12,10 +11,10 @@
                 <Header>
                     <div class="d-flex justify-content-start align-items-center header">
                         <div style=" font-family: Arial, sans-serif;
-    font-size: 32px;
-    color: #007bff;">
+                                    font-size: 32px;
+                                    color: #007bff;">
                             Meal<span style="font-weight: bold;
-    color: #28a745;">Gen</span>
+                                             color: #28a745;">Gen</span>
                         </div>
                     </div>
                 </Header>
@@ -23,10 +22,10 @@
                     <div style="border-right: 1px solid rgba(0, 0, 0, 0.125); padding: 6px 0;">
                         <AuthorizeView>
                             <Authorized>
-                                <Menu Items="@LoggedInStateSideMenuItems" IsVertical="true"/>
+                            <Menu Items="@LoggedInStateSideMenuItems" IsVertical="true"/>
                             </Authorized>
                             <NotAuthorized>
-                                <Menu Items="@LoggedOutStateMenuItems" IsVertical="true"/>
+                            <Menu Items="@LoggedOutStateMenuItems" IsVertical="true" />
                             </NotAuthorized>
                         </AuthorizeView>
                     </div>
@@ -78,19 +77,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        @* await base.OnInitializedAsync();
-
-        if(authenticationState != null)
-        {
-            var authState = await authenticationState;
-            var user = authState?.User;
-
-            if(user?.Identity != null && user.Identity.IsAuthenticated)
-            {
-                isLoggedIn = true;
-            }
-        } *@
-
         LoggedOutStateMenuItems = new List<MenuItem>
         {
             new MenuItem() { Text = "Home", Icon = "fa-solid fa-home", Url = "/"},
@@ -105,12 +91,5 @@
             new MenuItem() { Text = "Recipes", Icon = "fa-solid fa-book", Url = "/recipes" },
             new MenuItem() { Text = "Ingredients", Icon = "fa-solid fa-layer-group", Url = "/ingredients"}
         };
-
-@*         var currentUser = AuthenticationService.CurrentUser;
-        if(currentUser.Identity != null && !currentUser.Identity.IsAuthenticated)
-        {
-            var user = await JSRuntime.InvokeAsync<ClaimsPrincipal>("localStorage.getItem", ["claimsPrincipal"]);
-            AuthenticationService.CurrentUser = user; 
-        } *@
     }
 }

@@ -1,4 +1,10 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Blazored.SessionStorage
+@using FoodSystemClient.Authentication
+@using System.Security.Claims
+@inject TokenProvider TokenProvider
+@inject ISessionStorageService SessionStorage
+@inject AuthenticationService AuthenticationService
 
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
@@ -6,3 +12,24 @@
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            TokenProvider.AccessToken = await SessionStorage.GetItemAsync<string>("access_token");
+
+            if (string.IsNullOrEmpty(TokenProvider.AccessToken))
+            {
+                return;
+            }
+
+            var identity = new ClaimsIdentity(JwtParser.ParseClaimsFromJwt(TokenProvider.AccessToken), "jwt");
+            var user = new ClaimsPrincipal(identity);
+            AuthenticationService.CurrentUser = user;
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+}

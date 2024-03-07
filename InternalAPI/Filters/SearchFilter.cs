@@ -23,6 +23,6 @@ public class SearchFilter
         Search = search;
         CalorieSum = calorieSum < 0 ? 0 : calorieSum;
         NumberOfMeals = numberOfMeals < 1 ? 1 : numberOfMeals;
-        Days = days;
+        Days = days < 1 ? 1 : days;
     }
 }

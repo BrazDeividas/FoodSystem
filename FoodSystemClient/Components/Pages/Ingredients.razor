@@ -16,29 +16,34 @@
 
 @if (Items == null)
 {
-    <p>Loading...</p>
+    <SkeletonTable />
 }
 else
 {
     <input type="text" id="searchInput" placeholder="Search..." @bind="Search" class="form-control mb-3" @onkeyup="OnEnterPress"/>
-    <Button IsAsync="true" OnClick="@AddToMyIngredientsAsync" ButtonStyle= "ButtonStyle.Round" LoadingIcon = "fa-solid fa-spin" > Add to My Ingredients </Button>
+    <div class="row g-2">
+        <div class="col-auto">
+            <Button IsAsync="true" OnClick="@AddToMyIngredientsAsync" ButtonStyle="ButtonStyle.Round" Color="Color.Primary" LoadingIcon="fa-solid fa-spin"> Add to My Ingredients </Button>
+            <Button IsAsync="true" OnClick="@DeleteFromMyIngredientsAsync" ButtonStyle="ButtonStyle.Round" Color="Color.Danger" LoadingIcon = "fa-solid fa-spin" > Delete from My Ingredients </Button>
+        </div>
+    </div>
     <table class="table table-striped">
         <thead>
             <tr>
                 <th>
                     <input type="checkbox" @bind="IsAllChecked" @onclick="SelectAll"/>
                 </th> <!-- Empty header for selection buttons -->
-                <th>Owned</th>
-                <th>Description</th>
-                <th>Category</th>
-                <th>Energy (kcal)</th>
-                <th>Fat (g)</th>
-                <th>Of which Saturates (g)</th>
-                <th>Carbohydrate (g)</th>
-                <th>Of which Sugars (g)</th>
-                <th>Protein (g)</th>
-                <th>Salt (g)</th>
-                <th>Vitamin C (mg)</th>
+                <th style="text-align: center; vertical-align: middle;">Owned</th>
+                <th style="text-align: center; vertical-align: middle;">Description</th>
+                <th style="text-align: center; vertical-align: middle;">Category</th>
+                <th style="text-align: center; vertical-align: middle;">Energy (kcal)</th>
+                <th style="text-align: center; vertical-align: middle;">Fat (g)</th>
+                <th style="text-align: center; vertical-align: middle;">Of which Saturates (g)</th>
+                <th style="text-align: center; vertical-align: middle;">Carbohydrate (g)</th>
+                <th style="text-align: center; vertical-align: middle;">Of which Sugars (g)</th>
+                <th style="text-align: center; vertical-align: middle;">Protein (g)</th>
+                <th style="text-align: center; vertical-align: middle;">Salt (g)</th>
+                <th style="text-align: center; vertical-align: middle;">Vitamin C (mg)</th>
             </tr>
         </thead>
         <tbody>
@@ -48,7 +53,7 @@ else
                     <td>
                         <input type="checkbox" @bind="ingredient.Selected"/>
                     </td>
-                    <td style="text-align: center; vertical-align: center;">
+                    <td style="text-align: center; vertical-align: middle;">
                         @if(ingredient.Owned)
                         {
                             <i class="fas fa-check"></i>
@@ -56,14 +61,14 @@ else
                     </td>
                     <td>@ingredient.Description</td>
                     <td>@ingredient.Category</td>
-                    <td style="text-align: center; vertical-align: center;">@ingredient.EnergyKcal</td>
-                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.FatG, 2)</td>
-                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.SaturatedFatsG, 2)</td>
-                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.CarbG, 2)</td>
-                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.SugarG, 2)</td>
-                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.ProteinG, 2)</td>
-                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.SodiumMg / 1000, 2)</td>
-                    <td style="text-align: center; vertical-align: center;">@Math.Round(ingredient.VitcMg, 2)</td>
+                    <td style="text-align: center; vertical-align: middle;">@ingredient.EnergyKcal</td>
+                    <td style="text-align: center; vertical-align: middle;">@Math.Round(ingredient.FatG, 2)</td>
+                    <td style="text-align: center; vertical-align: middle;">@Math.Round(ingredient.SaturatedFatsG, 2)</td>
+                    <td style="text-align: center; vertical-align: middle;">@Math.Round(ingredient.CarbG, 2)</td>
+                    <td style="text-align: center; vertical-align: middle;">@Math.Round(ingredient.SugarG, 2)</td>
+                    <td style="text-align: center; vertical-align: middle;">@Math.Round(ingredient.ProteinG, 2)</td>
+                    <td style="text-align: center; vertical-align: middle;">@Math.Round(ingredient.SodiumMg / 1000, 2)</td>
+                    <td style="text-align: center; vertical-align: middle;">@Math.Round(ingredient.VitcMg, 2)</td>
                 </tr>
             }
         </tbody>
@@ -74,7 +79,7 @@ else
 @code {
     [NotNull]
     private List<Ingredient>? Items { get; set; } = new List<Ingredient>();
-    private List<Ingredient>? OwnedItems { get; set; } = new List<Ingredient>();
+    private List<int>? OwnedItemIds { get; set; } = new List<int>();
     private PagedResponse<IEnumerable<Ingredient>> ResponseIngredients { get; set; }
     private int TotalPages;
     private int PageSize;
@@ -102,15 +107,23 @@ else
     private async Task LoadOwnedIngredientsAsync()
     {
         var response = await ingredientService.GetOwnedIngredients();
-        OwnedItems = response.Data.ToList();
+        OwnedItemIds = response.Data.Select(x => x.IngredientId).ToList();
     }
 
     private async Task AddToMyIngredientsAsync()
     {
         var ingredientIds = Items.Where(x => x.Selected).Select(x => x.IngredientId).ToList();
+        if(ingredientIds.Count == 0) return;
+        OwnedItemIds!.AddRange(ingredientIds);
         await ingredientService.AddIngredientsToUser(ingredientIds);
-        await LoadOwnedIngredientsAsync();  
-        StateHasChanged();
+        Items.ForEach(x => x.Owned = (
+            OwnedItemIds!.Any(ingredientId => ingredientId == x.IngredientId)
+        ));
+    }
+
+    private async Task DeleteFromMyIngredientsAsync()
+    {
+        
     }
 
     private async void LoadDataFromResponse()
@@ -122,7 +135,7 @@ else
             CurrentPage = ResponseIngredients.PageNumber;
             Items = ResponseIngredients.Data.ToList();
             Items.ForEach(x => x.Owned = (
-                OwnedItems!.Any(owned => owned.IngredientId == x.IngredientId)
+                OwnedItemIds!.Any(ingredientId => ingredientId == x.IngredientId)
                 ? true
                 : false
             ));

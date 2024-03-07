@@ -100,6 +100,7 @@ public class IngredientController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Response<Ingredient>>> Add(PostIngredientDto request)
     {
+        
         var newEntity = await _service.Add(request);
         return CreatedAtAction(nameof(GetById), new { id = newEntity.IngredientId }, new Response<Ingredient>(newEntity));
     }

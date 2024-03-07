@@ -1,11 +1,12 @@
 @page "/login"
+@using Blazored.SessionStorage
 @using FoodSystemClient.Services
 @using FoodSystemClient.Authentication
 @inject IUserService userService
 @inject AuthenticationService authenticationService
 @inject TokenProvider tokenProvider
+@inject ISessionStorageService SessionStorage
 @inject NavigationManager navigationManager
-@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Login</PageTitle>
@@ -33,7 +34,7 @@
         if(userPrincipal != null)
         {
             authenticationService.CurrentUser = userPrincipal;
-            //await JSRuntime.InvokeVoidAsync("localStorage.setItem", "claimsPrincipal", userPrincipal); need to fix
+            await SessionStorage.SetItemAsync<string>("access_token", tokenProvider.AccessToken);
             navigationManager.NavigateTo("/");
         }
     }

@@ -232,6 +232,21 @@ public partial class FoodDbContext : DbContext
                 .HasConstraintName("FK_meal_plan_item_recipe");
         });
 
+        modelBuilder.Entity<UserPoints>(entity =>
+        {
+            entity.ToTable("user_points")
+                .HasKey(e => e.UserPointsId);
+
+            entity.Property(e => e.UserPointsId).HasColumnName("user_points_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Points).HasColumnName("points");
+
+            entity.HasOne(d => d.User).WithOne(p => p.UserPoints)
+                .HasForeignKey<UserPoints>(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_user_points_user");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 

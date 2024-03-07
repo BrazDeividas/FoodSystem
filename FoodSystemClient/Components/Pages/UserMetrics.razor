@@ -47,8 +47,6 @@
     {
         await base.OnInitializedAsync();
 
-        await AuthenticationStateProvider.GetAuthenticationStateAsync();
-
         Model = await userService.GetUserMetrics();
 
         if(Model != null)

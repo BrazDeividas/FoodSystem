@@ -2,6 +2,7 @@ using System.Text;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Handlers;
 using FoodSystemAPI.Helpers;
+using FoodSystemAPI.Middleware;
 using FoodSystemAPI.Repositories;
 using FoodSystemAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IRecipeService, RecipeService>();
         services.AddScoped<IMealPlanService, MealPlanService>();
+        services.AddScoped<IUserPointService, UserPointService>();
 
         services.AddSingleton<IUriService>(o =>
         {

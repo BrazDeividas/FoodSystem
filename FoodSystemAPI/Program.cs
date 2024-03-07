@@ -1,5 +1,6 @@
 using FoodSystemAPI.Helpers;
 using FoodSystemAPI.Infrastructure;
+using FoodSystemAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -61,6 +62,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseCheckUserPointsMiddleware();
 
 app.MapControllers();
 

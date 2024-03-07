@@ -26,4 +26,6 @@ public class User
     public virtual ICollection<Ingredient> Ingredients { get; set; } = new List<Ingredient>();
 
     public virtual MealPlan MealPlan { get; set; } = null!;
+
+    public virtual UserPoints UserPoints { get; set; } = null!;
 }

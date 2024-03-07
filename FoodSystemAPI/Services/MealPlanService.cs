@@ -14,11 +14,14 @@ public class MealPlanService : IMealPlanService
 
     private readonly IRecipeService _recipeService;
 
-    public MealPlanService(IRepository<MealPlan> mealPlanRepository, IHttpClientFactory httpClientFactory, IRecipeService recipeService)
+    private readonly IUserPointService _userPointService;
+
+    public MealPlanService(IRepository<MealPlan> mealPlanRepository, IHttpClientFactory httpClientFactory, IRecipeService recipeService, IUserPointService userPointService)
     {
         _mealPlanRepository = mealPlanRepository;
         _internalApiClient = httpClientFactory.CreateClient("api-internal");
         _recipeService = recipeService;
+        _userPointService = userPointService;
     }
 
     public async Task<MealPlan?> GetCurrentMealPlanAsync(int userId)
@@ -43,6 +46,8 @@ public class MealPlanService : IMealPlanService
         var neededCalories = CalculateCaloricNeeds(userMetrics);
 
         var days = (int)double.Ceiling((endDate - startDate).TotalDays);
+
+        await _userPointService.SubtractUserPoints(userMetrics.UserId, days);
 
         var response = await _internalApiClient.GetFromJsonAsync<Response<IEnumerable<ReceiveServerRecipeDto>>>($"api/Recipe/byFilter?calorieSum={(int)neededCalories}&numberOfMeals={numberOfMeals}&days={days}");
 

@@ -1,8 +1,9 @@
 using System.Security.Claims;
 using System.Text.Json;
-using Azure.Core;
 using FoodSystemAPI.DTOs;
+using FoodSystemAPI.Entities;
 using FoodSystemAPI.Services;
+using FoodSystemAPI.Wrappers;
 
 namespace FoodSystemAPI.Middleware;
 
@@ -37,10 +38,11 @@ public class CheckUserPointsMiddleware
                         PropertyNameCaseInsensitive = true
                     };
                     var result = JsonSerializer.Deserialize<MealPlanOptions>(body, options);
-                    if (result == null || userPoints == null || userPoints.Points < (result.EndDate - result.StartDate).TotalDays)
+                    var days = (int)double.Ceiling((result.EndDate - result.StartDate).TotalDays);
+                    if (result == null || userPoints == null || userPoints.Points < days)
                     {
                         context.Response.StatusCode = 403;
-                        await context.Response.WriteAsync("Not enough points to plan a meal");
+                        await context.Response.WriteAsJsonAsync(new Response<MealPlan> { Succeeded = false, Message = "Not enough points to form desired meal plan" });
                         return;
                     }
                     await _next.Invoke(context);

@@ -1,0 +1,10 @@
+.recipe-image{
+    max-width: 100%;
+    height: auto;
+}
+
+.col-md-4{
+    display: grid;
+    justify-content: center;
+    align-content: center;
+}

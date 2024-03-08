@@ -1,8 +1,4 @@
 @page "/user-metrics"
-@using FoodSystemClient.Services
-@using FoodSystemClient.DTOs
-@using System.Text.Json
-@using Microsoft.AspNetCore.Components.Authorization
 @inject IUserService userService
 @inject IJSRuntime jsRuntime
 @inject MessageService messageService
@@ -12,17 +8,19 @@
 
 <PageTitle>User Metrics</PageTitle>
 
-<h2>My User Metrics</h2>
+<h3>My User Metrics</h3>
 
 <ValidateForm Model="@Model" OnValidSubmit="@AddUserMetricsAsync">
     <EditorForm TModel="Models.UserMetrics">
         <Buttons>
             @if(metricsExist)
             {
+                <hr/>
                 <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-save" Text="Update" IsAsync="true" />
             }
             else
             {
+                <hr/>
                 <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-paper-plane" Text="Send" IsAsync="true" />
             }
         </Buttons>

@@ -1,10 +1,4 @@
 @page "/ingredients"
-@using FoodSystemClient.Components.Components
-@using FoodSystemClient.Wrappers
-@using FoodSystemClient.Models
-@using FoodSystemClient.Services
-@using FoodSystemClient.Authentication
-@using System.Diagnostics.CodeAnalysis
 @inject IHttpClientFactory ClientFactory
 @inject IIngredientService ingredientService
 @inject NavigationManager navigationManager
@@ -12,8 +6,8 @@
 
 <PageTitle>Ingredients</PageTitle>
 
-<h2>Ingredients</h2>
-
+<h3>Ingredients</h3>
+<br>
 @if (Items == null)
 {
     <SkeletonTable />
@@ -21,12 +15,14 @@
 else
 {
     <input type="text" id="searchInput" placeholder="Search..." @bind="Search" class="form-control mb-3" @onkeyup="OnEnterPress"/>
+    <hr />
     <div class="row g-2">
         <div class="col-auto">
             <Button IsAsync="true" OnClick="@AddToMyIngredientsAsync" ButtonStyle="ButtonStyle.Round" Color="Color.Primary" LoadingIcon="fa-solid fa-spin"> Add to My Ingredients </Button>
             <Button IsAsync="true" OnClick="@DeleteFromMyIngredientsAsync" ButtonStyle="ButtonStyle.Round" Color="Color.Danger" LoadingIcon = "fa-solid fa-spin" > Delete from My Ingredients </Button>
         </div>
     </div>
+    <br>
     <table class="table table-striped">
         <thead>
             <tr>

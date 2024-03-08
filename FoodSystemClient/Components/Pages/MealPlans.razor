@@ -1,8 +1,4 @@
 @page "/meal-plans"
-@using FoodSystemClient.Models
-@using FoodSystemClient.Services
-@using FoodSystemClient.Wrappers
-@using System.ComponentModel.DataAnnotations;
 @inject IMealPlanService MealPlanService
 @inject MessageService messageService
 @inject NavigationManager navigationManager
@@ -15,7 +11,7 @@
 }
 else if(CurrentMealPlan == null)
 {
-    <h2>Generate Your Meal Plan</h2>
+    <h3>Generate Your Meal Plan</h3>
 
     <ValidateForm Model="@MealPlanForm" OnValidSubmit="@GenerateAsync"> 
         <div class="row">
@@ -40,25 +36,44 @@ else
         <div class="col-2">
             <h5>
                 <small class="text-muted">@DateTime.Now.ToShortDateString()</small>
-                <small class="text-muted">Total Calories: </small><small>@CurrentMealPlan.TotalCalories</small>
+                <small class="text-muted">Total Calories: </small><small>@CurrentMealPlan.MealPlanItems.Sum(x => x.Recipe.Calories)</small>
             </h5>
         </div>
     </div>
     @foreach (var item in CurrentMealPlan.MealPlanItems)
     {
-    <Card Color="Color.Dark">
-        <BodyTemplate>
-            <h4>@item.Recipe.Title</h4>
-            @foreach(var ingredient in item.Recipe.Ingredients)
-            {
-                <p class="card-text">@ingredient</p>
-            }
-            <p class="card-text">@item.Recipe.Instructions</p>
-            <div class="container" style="height: 150px; width: auto; max-width: 250px">
-                    <ImageViewer Url="@item.Recipe.ImageUrl.ToString()" ShowPlaceHolder="true"></ImageViewer>
+        <div class="container">
+            <div class="card">
+                <div class="row no-gutters">
+                    <div class="col-md-4">
+                        <img src="@item.Recipe.ImageUrl" class="card-img-top rounded recipe-image" alt="@item.Recipe.Title" />
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-10">
+                                    <h5 class="card-title">@item.Recipe.Title</h5>
+                                </div>
+                                <div class="col-2">
+                                        <small>Calories: <b>@item.Recipe.Calories</b></small>
+                                        <br>
+                                        <small>Servings: @item.Recipe.Servings</small>
+                                </div>
+                            </div>
+                            <hr />
+                            <p class="card-text">@item.Recipe.Instructions</p>
+                            <ul class="list-group">
+                                <li class="list-group-item active"><b>Ingredients</b></li>
+                                @foreach (var ingredient in item.Recipe.Ingredients)
+                                {
+                                    <li class="list-group-item">@ingredient</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </BodyTemplate>
-    </Card>
+        </div>
     }
 }
 

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
@@ -29,7 +30,10 @@ public class CheckUserPointsMiddleware
                 var userPoints = await userPointService.GetUserPoints(userEntity.UserId);
                 context.Request.EnableBuffering();
                 
-                using (StreamReader stream = new StreamReader(context.Request.Body))
+                using (StreamReader stream = new StreamReader(context.Request.Body,
+                                                            encoding: Encoding.UTF8,
+                                                            detectEncodingFromByteOrderMarks: false,
+                                                            leaveOpen: true))
                 {
                     var body = await stream.ReadToEndAsync();
                     context.Request.Body.Seek(0, SeekOrigin.Begin);

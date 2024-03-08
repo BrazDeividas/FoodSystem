@@ -1,3 +1,4 @@
+using AutoMapper;
 using FoodSystemAPI.DTOs;
 using FoodSystemAPI.Entities;
 using FoodSystemAPI.Repositories;
@@ -16,15 +17,18 @@ public class MealPlanService : IMealPlanService
 
     private readonly IUserPointService _userPointService;
 
-    public MealPlanService(IRepository<MealPlan> mealPlanRepository, IHttpClientFactory httpClientFactory, IRecipeService recipeService, IUserPointService userPointService)
+    private readonly IMapper _mapper;
+
+    public MealPlanService(IRepository<MealPlan> mealPlanRepository, IHttpClientFactory httpClientFactory, IRecipeService recipeService, IUserPointService userPointService, IMapper mapper)
     {
         _mealPlanRepository = mealPlanRepository;
         _internalApiClient = httpClientFactory.CreateClient("api-internal");
         _recipeService = recipeService;
         _userPointService = userPointService;
+        _mapper = mapper;
     }
 
-    public async Task<MealPlan?> GetCurrentMealPlanAsync(int userId)
+    public async Task<SendClientMealPlanDto?> GetCurrentMealPlanAsync(int userId)
     {
         var mealPlan = _mealPlanRepository.IncludeMultipleQueryable(
             _mealPlanRepository.GetAllQueryable(x => x.UserId == userId && x.StartDate <= DateTime.Now && x.EndDate >= DateTime.Now),
@@ -35,10 +39,13 @@ public class MealPlanService : IMealPlanService
         {
             return null;
         }
+
+        var recipes = await _recipeService.GetSavedRecipesIncludeAsync(x => mealPlanFirst.MealPlanItems.Select(i => i.RecipeId).Contains(x.RecipeId), x => x.Ingredients);
         
-        var recipes = await _recipeService.GetSavedRecipesAsync(x => mealPlanFirst.MealPlanItems.Select(i => i.RecipeId).Contains(x.RecipeId));
         mealPlanFirst.MealPlanItems.ToList().ForEach(x => x.Recipe = x.Recipe ?? recipes.FirstOrDefault(r => r.RecipeId == x.RecipeId));
-        return mealPlanFirst;
+        var mealPlanItemsDto = _mapper.Map<IEnumerable<MealPlanItem>, IEnumerable<SendClientMealPlanItemDto>>(mealPlanFirst.MealPlanItems);
+        var mealPlanDto = _mapper.Map<MealPlan, SendClientMealPlanDto>(mealPlanFirst);
+        return mealPlanDto;
     }
 
     public async Task<MealPlan> PlanMealAsync(UserMetrics userMetrics, int numberOfMeals, DateTime startDate, DateTime endDate)

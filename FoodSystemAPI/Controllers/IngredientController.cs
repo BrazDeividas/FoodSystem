@@ -121,6 +121,22 @@ public class IngredientController : ControllerBase
         await _userService.AddIngredientsToUserAsync(ingredients, user.UserId);
         return Ok();
     }
+    [HttpPost("RemoveFromUser")]
+    public async Task<ActionResult> RemoveFromUser(IEnumerable<int> ingredientIds)
+    {
+        ClaimsPrincipal claimsPrincipal = HttpContext.User;
+        var username = claimsPrincipal.FindFirst(ClaimTypes.Name);
+        
+        if(username == null)
+        {
+            return NotFound();
+        }
+
+        var user = await _userService.GetUserByUsername(username.Value);
+        var ingredients = await _service.GetAll(x => ingredientIds.Contains(x.IngredientId));
+        await _userService.RemoveIngredientsFromUserAsync(ingredients, user.UserId);
+        return Ok();
+    }
 
     [HttpPut]
     public ActionResult<Response<Ingredient>> Update(Ingredient entity)

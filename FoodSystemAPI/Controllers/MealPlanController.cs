@@ -42,7 +42,7 @@ public class MealPlanController : ControllerBase
             return Ok(new Response<MealPlan>{ Succeeded = false, Message = "No active meal plan found" });
         }
 
-        return Ok(new Response<MealPlan>(mealPlan));
+        return Ok(new Response<SendClientMealPlanDto>(mealPlan));
     }
 
     [HttpPost]

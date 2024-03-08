@@ -18,8 +18,7 @@ public class RecipeService : IRecipeService
     private readonly IMapper _mapper;
     private readonly ICacheService _cacheService;
     private readonly IIngredientService _ingredientService;
-    private readonly IRepository<Recipe> _recipeRepository; 
-    private readonly IRepository<RecipeIngredient> _recipeIngredientRepository;
+    private readonly IRepository<Recipe> _recipeRepository;
 
     public RecipeService(IHttpClientFactory httpClientFactory, IMapper mapper, ICacheService cacheService, IIngredientService ingredientService, IRepository<Recipe> recipeRepository, IRepository<RecipeIngredient> recipeIngredientRepository)
     {
@@ -29,7 +28,6 @@ public class RecipeService : IRecipeService
         _cacheService = cacheService;
         _ingredientService = ingredientService;
         _recipeRepository = recipeRepository;
-        _recipeIngredientRepository = recipeIngredientRepository;
     }
 
     public async Task<IEnumerable<Recipe>> GetSavedRecipesAsync(Expression<Func<Recipe, bool>> expression)
@@ -37,6 +35,11 @@ public class RecipeService : IRecipeService
         return await _recipeRepository.GetAll(expression);
     }
 
+    public async Task<IEnumerable<Recipe>> GetSavedRecipesIncludeAsync(Expression<Func<Recipe, bool>> expression, params Expression<Func<Recipe, object>>[] includeProperties)
+    {
+        return await _recipeRepository.GetAllInclude(expression, includeProperties);
+    }
+    
     public async Task<IEnumerable<ReceiveServerRecipeDto>> GetRecipesAsync(string searchQuery, PaginationFilter paginationFilter)
     {
         var cachedEntities = await _cacheService.Get<IEnumerable<ReceiveServerRecipeDto>>($"{typeof(ReceiveServerRecipeDto)}-{searchQuery}");
@@ -97,23 +100,19 @@ public class RecipeService : IRecipeService
     {
         var recipeEntities = _mapper.Map<IEnumerable<Recipe>>(recipes);
 
-        for(int i = 0; i < recipeEntities.Count(); i++)
+        for (int i = 0; i < recipeEntities.Count(); i++)
         {
             recipeEntities.ElementAt(i).UserId = userId;
 
-            await _recipeRepository.Add(recipeEntities.ElementAt(i));
-
             await _ingredientService.GetAll(x => recipes.ElementAt(i).IngredientIds.Contains(x.IngredientId))
-                .ContinueWith(task => {
-                    var ingredients = task.Result;
-                    foreach(Entities.Ingredient ingredient in ingredients)
-                    {
-                        _recipeIngredientRepository.Add(new RecipeIngredient { RecipeId = recipeEntities.ElementAt(i).RecipeId, IngredientId = ingredient.IngredientId });
-                    }
+                .ContinueWith(async task => {
+                    var ingredients = await task;
+                    recipeEntities.ElementAt(i).Ingredients = ingredients.ToList();
                 });
+            
+            await _recipeRepository.Add(recipeEntities.ElementAt(i));
+            _recipeRepository.Save();
         }
-
-        _recipeRepository.Save();
         
         return recipeEntities;
     }

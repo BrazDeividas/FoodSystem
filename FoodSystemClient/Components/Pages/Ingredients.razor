@@ -1,6 +1,7 @@
 @page "/ingredients"
 @inject IHttpClientFactory ClientFactory
 @inject IIngredientService ingredientService
+@inject ICategoryService categoryService
 @inject NavigationManager navigationManager
 @rendermode InteractiveServer
 
@@ -20,8 +21,30 @@ else
         <div class="col-auto">
             <Button IsAsync="true" OnClick="@AddToMyIngredientsAsync" ButtonStyle="ButtonStyle.Round" Color="Color.Primary" LoadingIcon="fa-solid fa-spin"> Add to My Ingredients </Button>
             <Button IsAsync="true" OnClick="@DeleteFromMyIngredientsAsync" ButtonStyle="ButtonStyle.Round" Color="Color.Danger" LoadingIcon = "fa-solid fa-spin" > Delete from My Ingredients </Button>
+            <Button IsAsync="true" OnClick="() => IngredientFormModal.Toggle()" ButtonStyle="ButtonStyle.Round" Color="Color.Secondary" LoadingIcon="fa-solid fa-spin"> Create New Ingredient </Button>
         </div>
     </div>
+
+    <Modal @ref="IngredientFormModal">
+        <ModalDialog IsCentered="true" Title="Vertically centered popup">
+            <BodyTemplate>
+                <div>
+                <ValidateForm Model="@IngredientModel" OnValidSubmit="@CreateNewIngredientAsync">
+                    <EditorForm ItemsPerRow="5" TModel="@DTOs.PostIngredientDto">
+                        <FieldItems>
+                            <Select IsVirtualize="true" Items="CategoriesSelect" @bind-Value="@context.Category" />
+                        </FieldItems>
+                        <Buttons>
+                            <hr />
+                            <Button ButtonType="ButtonType.Submit" Icon="fa-solid fa-paper-plane" Text="Create" IsAsync="true" />
+                        </Buttons>
+                    </EditorForm>
+                </ValidateForm>
+                </div>
+            </BodyTemplate>
+        </ModalDialog>
+    </Modal>
+
     <br>
     <table class="table table-striped">
         <thead>
@@ -74,8 +97,12 @@ else
 
 @code {
     [NotNull]
-    private List<Ingredient>? Items { get; set; } = new List<Ingredient>();
-    private List<int>? OwnedItemIds { get; set; } = new List<int>();
+    private List<Ingredient> Items { get; set; } = new List<Ingredient>();
+    private List<Category> Categories { get; set; } = new();
+    private List<SelectedItem> CategoriesSelect { get; set; } = new();
+    private List<int> OwnedItemIds { get; set; } = new List<int>();
+    private PostIngredientDto IngredientModel { get; set; } = new();
+    private Modal? IngredientFormModal { get; set; }
     private PagedResponse<IEnumerable<Ingredient>> ResponseIngredients { get; set; }
     private int TotalPages;
     private int PageSize;
@@ -88,6 +115,7 @@ else
     {
         await base.OnInitializedAsync();
 
+        await LoadCategoriesAsync();
         ResponseIngredients = await ingredientService.GetIngredientsByPage(1, 10, Search);
         await LoadOwnedIngredientsAsync();
         LoadDataFromResponse();
@@ -106,20 +134,46 @@ else
         OwnedItemIds = response.Data.Select(x => x.IngredientId).ToList();
     }
 
+    private async Task LoadCategoriesAsync()
+    {
+        var response = await categoryService.GetCategories();
+        if (response.Succeeded)
+        {
+            Categories = response.Data.ToList();
+            CategoriesSelect = Categories.Select(x => new SelectedItem
+            {
+                Text = x.Description,
+                Value = x.Description
+            }
+            ).ToList();
+        }
+    }
+
     private async Task AddToMyIngredientsAsync()
     {
         var ingredientIds = Items.Where(x => x.Selected).Select(x => x.IngredientId).ToList();
-        if(ingredientIds.Count == 0) return;
-        OwnedItemIds!.AddRange(ingredientIds);
+        if (ingredientIds.Count == 0) return;
+        if (OwnedItemIds!.All(ingredientId => ingredientIds.Contains(ingredientId))) return;
         await ingredientService.AddIngredientsToUser(ingredientIds);
-        Items.ForEach(x => x.Owned = (
-            OwnedItemIds!.Any(ingredientId => ingredientId == x.IngredientId)
-        ));
+        OwnedItemIds!.AddRange(ingredientIds);
+        Items.ForEach(x => x.Owned = x.Selected ? true : x.Owned);
     }
 
     private async Task DeleteFromMyIngredientsAsync()
     {
-        
+        var ingredientIds = Items.Where(x => x.Selected).Select(x => x.IngredientId).ToList();
+        if (ingredientIds.Count == 0) return;
+        if (OwnedItemIds.Any(ingredientId => ingredientIds.Contains(ingredientId)) == false) return;
+        await ingredientService.RemoveIngredientsFromUser(ingredientIds);
+        OwnedItemIds!.RemoveAll(ingredientId => ingredientIds.Contains(ingredientId));
+        Items.ForEach(x => x.Owned = x.Selected ? false : x.Owned);
+    }
+
+    private async Task CreateNewIngredientAsync(EditContext context)
+    {
+        if (!context.Validate()) return;
+
+        await Task.CompletedTask;
     }
 
     private async void LoadDataFromResponse()

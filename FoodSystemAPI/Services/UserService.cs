@@ -101,4 +101,22 @@ public class UserService : IUserService
         _userRepository.Update(user);
         _userRepository.Save();
     }
+
+    public async Task RemoveIngredientsFromUserAsync(IEnumerable<Ingredient> ingredients, int userId)
+    {
+        var user = (await _userRepository.GetAllInclude(x => x.UserId == userId, x => x.Ingredients)).FirstOrDefault();
+
+        if (user == null)
+        {
+            return;
+        }
+
+        foreach(var ingredient in ingredients)
+        {
+            user.Ingredients.Remove(ingredient);
+        }
+
+        _userRepository.Update(user);
+        _userRepository.Save();
+    }
 }

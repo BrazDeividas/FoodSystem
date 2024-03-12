@@ -1,8 +1,11 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using FoodSystemClient.Authentication;
+using FoodSystemClient.DTOs;
 using FoodSystemClient.Models;
 using FoodSystemClient.Wrappers;
+using Microsoft.VisualBasic;
 
 namespace FoodSystemClient.Services;
 
@@ -37,8 +40,25 @@ public class IngredientService : IIngredientService
         await _httpClient.PostAsJsonAsync("api/Ingredient/AddToUser", ingredientIds);
     }
 
+    public async Task RemoveIngredientsFromUser(IEnumerable<int> ingredientIds)
+    {
+        var request = new HttpRequestMessage
+        {
+            Method = HttpMethod.Delete,
+            RequestUri = new Uri(_httpClient.BaseAddress!, "api/Ingredient/RemoveFromUser"),
+            Content = new StringContent(JsonSerializer.Serialize(ingredientIds), Encoding.UTF8, "application/json")
+        };
+
+        await _httpClient.SendAsync(request);
+    }
+
     public async Task<Response<IEnumerable<Ingredient>>> GetOwnedIngredients()
     {
         return await _httpClient.GetFromJsonAsync<Response<IEnumerable<Ingredient>>>("api/Ingredient/byUser");
+    }
+
+    public async Task AddNewIngredientAsync(PostIngredientDto ingredient)
+    {
+        return;
     }
 }

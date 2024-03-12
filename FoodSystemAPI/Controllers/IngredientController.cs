@@ -121,7 +121,7 @@ public class IngredientController : ControllerBase
         await _userService.AddIngredientsToUserAsync(ingredients, user.UserId);
         return Ok();
     }
-    [HttpPost("RemoveFromUser")]
+    [HttpDelete("RemoveFromUser")]
     public async Task<ActionResult> RemoveFromUser(IEnumerable<int> ingredientIds)
     {
         ClaimsPrincipal claimsPrincipal = HttpContext.User;
